@@ -522,7 +522,8 @@
     cvd: { T: 'surface-limited', P: 'mass-transport-limited', C: 'partial-pressure', Q: 'boundary-layer', t: 'deposition-rate' },
     rd: { T: 'reaction-diffusion', C0: 'second-order', cat: 'damkohler', tort: 'tortuosity', t: 'penetration-depth' },
     kiln: { Tset: 'setpoint', ramp: 'thermal-lag', hold: 'effective-hold', sx: 'loading-position', sy: 'loading-position' },
-    heat: { C: 'carbon-content', Tset: 'austenitizing', ramp: 'thermal-lag', hold: 'grain-growth', cool: 'cct-curve', atm: 'furnace-atmosphere' }
+    heat: { C: 'carbon-content', Tset: 'austenitizing', ramp: 'thermal-lag', hold: 'grain-growth', cool: 'cct-curve', atm: 'furnace-atmosphere' },
+    quench: { C: 'carbon-content', Tset: 'austenitizing', hold: 'grain-growth', zone: 'loading-position', medium: 'quench-medium', dia: 'hardenability', temperT: 'tempering' }
   };
 
   function paramGlossId(key) {
@@ -854,6 +855,14 @@
     if (key === 'da') return val > 100 ? '反应控制' : (val > 1 ? '过渡区' : '扩散控制');
     if (key === 'grad') return '前沿陡峭程度';
     if (key === 'front') return '反应前沿平均速度';
+    if (key === 'HRCs') return val >= 55 ? '淬火态，硬而脆' : (val >= 45 ? '表面淬硬良好' : (val >= 25 ? '中硬状态' : '表面偏软'));
+    if (key === 'HRCc') return val >= 45 ? '心部已淬透' : (val >= 30 ? '心部半淬透' : '心部未淬透，保持韧态');
+    if (key === 'caseDepth') {
+      var rr = p.dia != null ? val / Math.max(1, p.dia / 2) : 0;
+      return rr >= 0.95 ? '全截面淬透' : (rr >= 0.4 ? '硬化层覆盖大半半径' : (rr >= 0.1 ? '仅表层硬化' : '几乎没有硬化层'));
+    }
+    if (key === 'Rm') return val >= 1800 ? '强度很高，注意脆性' : (val >= 1200 ? '强韧匹配良好' : '强度水平一般');
+    if (key === 'austF') return val >= 95 ? '奥氏体化完全' : (val >= 70 ? '基本奥氏体化' : (val >= 30 ? '奥氏体化不完全' : '几乎未奥氏体化'));
     return '';
   }
 
@@ -2838,10 +2847,16 @@
 
     html += '<div class="report-sec"><h3>四、结论与建议</h3>';
     var best = list.slice().sort(function (a, b) { return b.metricMap.score - a.metricMap.score; })[0];
+    /* 工况摘要：各模块字段不同，优先用模块自己在 UI 配置里声明的写法，
+       否则按字段存在性拼接（避免引用了本模块没有的参数而显示 undefined）。 */
+    var briefFn = Sim.getUI(state.moduleId).reportBrief;
+    var brief = briefFn ? briefFn(best.params, fmtNum)
+      : (best.params.T != null ? 'T=' + best.params.T + ' ℃'
+        : '设定 ' + best.params.Tset + ' ℃' +
+          (best.params.sx != null ? ' / 位置 ' + best.params.sx + '%' : '') +
+          (best.params.ramp != null ? ' / 升温 ' + best.params.ramp + ' ℃·min⁻¹' : ''));
     html += '<p>在本次 ' + list.length + ' 组实验中，综合评分最高的是 <b>第 ' + (best.seq || '·') + ' 组</b>（' +
-      best.variantName + '，' + (best.params.T != null ? 'T=' + best.params.T + ' ℃'
-        : '设定 ' + best.params.Tset + ' ℃ / 位置 ' + best.params.sx + '% / 升温 ' + best.params.ramp + ' ℃·min⁻¹') +
-        '，综合评分 ' + fmtNum(best.metricMap.score, 1) + '）。</p>';
+      best.variantName + '，' + brief + '，综合评分 ' + fmtNum(best.metricMap.score, 1) + '）。</p>';
     var adv = buildAdvice(run);
     if (adv.length) {
       html += '<p>' + adv.slice(0, 3).map(function (a) {

@@ -12,6 +12,7 @@
     { id: 'rd', short: '反应扩散', name: '反应-扩散', desc: '浓度场、反应前沿与渗透深度' },
     { id: 'kiln', short: '马弗炉', name: '马弗炉烧成', desc: '边界条件与炉膛不均匀性' },
     { id: 'heat', short: '热处理', name: '热处理', desc: 'Fe-C 相变、组织与磁性能' },
+    { id: 'quench', short: '碳钢热处理', name: '碳钢热处理', desc: 'CCT 曲线、淬透性与淬火回火' },
     { id: 'num', short: '数值/AI', name: '数值方法与智能寻优', desc: '离散求解、扫掠与优化' }
   ];
 
@@ -678,6 +679,42 @@
       why: '软磁要求越低越好（电磁纯铁约 40~80 A/m），硬磁则相反。凡是能钉扎磁畴壁的缺陷都会抬高它：晶界、渗碳体、位错、内应力。',
       pit: '提高强度与降低矫顽力在钢里往往互相冲突：细化晶粒、增加碳化物能强化，却同时增加钉扎点。这就是磁钢选材的核心矛盾，也是退火要「粗晶 + 少碳化物」的原因。',
       mod: 'heat', param: 'cool', rel: ['martensite', 'decarburization', 'carbon-content']
+    },
+    /* ------------------------------ 碳钢热处理 ------------------------------ */
+    {
+      id: 'ttt-curve', cat: 'quench', zh: '等温转变曲线', en: 'Time-temperature-transformation', abbr: 'TTT', sym: 'C 曲线', unit: '',
+      def: '把过冷奥氏体在不同温度下的等温转变开始与终了时间画在温度-时间图上，得到一对 C 形曲线。鼻尖处转变最快。',
+      why: 'C 曲线把「温度-时间-组织」三者钉在同一张图上：转变只能发生在曲线以右。冷却曲线从左边快速穿过，转变就来不及发生，最后只能变成马氏体。',
+      pit: 'TTT 是等温条件的结果，不能直接套到连续冷却上。连续冷却（CCT）曲线整体在 TTT 右下方，用 TTT 判断连续冷却会高估淬透性。',
+      mod: 'quench', param: 'medium', rel: ['cct-curve', 'hardenability', 'martensite']
+    },
+    {
+      id: 'hardenability', cat: 'quench', zh: '淬透性', en: 'Hardenability', abbr: '', sym: 'D_I', unit: 'mm',
+      def: '钢在淬火时获得马氏体组织的能力，用工件心部恰好淬成半马氏体的临界直径来衡量。它与淬火烈度是两回事。',
+      why: '淬透性由成分（碳与合金元素）和奥氏体晶粒度决定：碳越高、晶粒越粗，C 曲线越靠右，越容易淬透。同钢小件淬透、大件不淬透，就是淬透性在「限量供应」。',
+      pit: '淬透性高不等于硬度高。淬透性说的是「多深的部位能淬成马氏体」，硬度高低由马氏体的含碳量决定。低碳钢淬透了也只是软马氏体。',
+      mod: 'quench', param: 'dia', rel: ['cct-curve', 'case-depth', 'quench-medium']
+    },
+    {
+      id: 'quench-medium', cat: 'quench', zh: '淬火介质与换热系数', en: 'Quenching medium', abbr: '', sym: 'h', unit: 'W/(m²·K)',
+      def: '工件出炉后接触的物质（空气、油、水或聚合物溶液），用表面换热系数 h 刻画其冷却能力：水约 10000~20000、油约 2000~5000、静止空气仅几十 W/(m²·K)。',
+      why: '介质决定工件表面的冷却速度，从而决定 CCT 图上冷却曲线的斜率。选介质的本质是平衡「淬得硬」与「裂不了」：水最硬但最危险，油温和，空气只够正火。',
+      pit: '水冷忽略蒸汽膜阶段会低估实际危险。真实水冷先经过膜沸腾（冷得慢）再进入核沸腾（冷得极快），厚薄不同的工件对开裂的敏感程度差别很大。',
+      mod: 'quench', param: 'medium', rel: ['hardenability', 'cct-curve', 'thermal-lag']
+    },
+    {
+      id: 'case-depth', cat: 'quench', zh: '淬硬层深度', en: 'Case depth / Hardened depth', abbr: '', sym: 'δ', unit: 'mm',
+      def: '淬火工件截面上，硬度降到半马氏体硬度（通常取表面与心部硬度的中值）处到表面的距离。是感应淬火与渗碳件的验收指标。',
+      why: '它直观表达「淬透了多少」：全截面淬透时 δ 等于半径；只有表层硬化时 δ 只有几毫米。耐磨件需要足够深的硬化层来支撑接触载荷。',
+      pit: '淬硬层深不等于工件更好。心部保持韧态的「表硬心韧」状态往往正是设计目标，硬层过深反而提高脆断与开裂风险。',
+      mod: 'quench', param: 'dia', rel: ['hardenability', 'quench-medium', 'tempering']
+    },
+    {
+      id: 'tempering', cat: 'quench', zh: '回火', en: 'Tempering', abbr: '', sym: 'T_t', unit: '℃',
+      def: '淬火后把工件重新加热到 Ac1 以下保温，使马氏体分解、碳化物析出并聚集长大，在损失一部分硬度的前提下消除应力、恢复韧性。',
+      why: '淬火态马氏体硬而脆、内应力极大，几乎不能直接服役。150~250 ℃ 低温回火保留硬度（刀具、轴承），500~650 ℃ 高温回火得到回火索氏体（调质，强韧匹配，轴类）。',
+      pit: '约 250~350 ℃ 存在第一类回火脆性：韧性不升反降且无法通过后续热处理消除，要么避开该区间，要么在该区间快速通过。',
+      mod: 'quench', param: 'temperT', rel: ['martensite', 'case-depth', 'grain-growth']
     }
   ];
 

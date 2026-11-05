@@ -16,6 +16,7 @@
  *    modules/rd.js       反应-扩散      二维有限差分（Fick + 二级反应）
  *    modules/kiln.js     马弗炉烧成     炉膛热场 + 装炉位置 + 热滞后
  *    modules/heat.js     Fe-C 热处理    奥氏体化 + 冷却组织分配 + 磁性能
+ *    modules/quench.js   碳钢热处理    径向传热 + CCT 沿程积分 + 淬硬层
  *    engine/run.js       单次运行
  *    engine/live.js      实时演算
  *    engine/study.js     扫掠、敏感性、寻优
@@ -40,11 +41,13 @@
     require('./modules/rd.js');
     require('./modules/kiln.js');
     require('./modules/heat.js');
+    require('./modules/quench.js');
     require('./modules/solid.ui.js');
     require('./modules/cvd.ui.js');
     require('./modules/rd.ui.js');
     require('./modules/kiln.ui.js');
     require('./modules/heat.ui.js');
+    require('./modules/quench.ui.js');
     require('./engine/run.js');
     require('./engine/live.js');
     require('./engine/study.js');

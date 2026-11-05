@@ -459,6 +459,51 @@
     return api;
   }
 
+  /* 碳钢热处理实时演算：与 liveHeat 同一思路——完整解 + 推进游标，
+     终值与静态仿真严格一致，中途曲线取前缀。 */
+  function liveQuench(M, p, v) {
+    var full = M.simulate(p, v, {});
+    var tEnd = Math.max(1e-6, full.extra.tEnd);
+    var NP = full.time.length;
+    var api = {
+      moduleId: 'quench', params: p, variantId: v.id, unit: 'min',
+      tEnd: tEnd, t: 0, progress: 0, done: false,
+      advance: function (dt) {
+        this.t = Math.min(this.tEnd, this.t + Math.max(0, dt));
+        this.progress = this.t / this.tEnd;
+        this.done = this.t >= this.tEnd - 1e-9;
+      },
+      snapshot: function () {
+        var idx = Math.min(NP - 1, Math.max(0, Math.round(this.progress * (NP - 1))));
+        var sl = function (a) { return a.slice(0, idx + 1); };
+        return {
+          t: this.t, progress: this.progress, time: sl(full.time),
+          series: {
+            T: sl(full.series.T), Tc: sl(full.series.Tc),
+            aust: sl(full.series.aust), fM: sl(full.series.fM), HRCs: sl(full.series.HRCs)
+          },
+          metrics: (idx >= NP - 1) ? full.metrics : {
+            HRCs: full.metrics.HRCs, HRCc: full.metrics.HRCc,
+            caseDepth: full.metrics.caseDepth, Rm: full.metrics.Rm,
+            austF: full.series.aust[idx], grain: full.metrics.grain,
+            fM: full.series.fM[idx], score: full.metrics.score
+          },
+          field: full.field, fieldProg: this.progress,
+          extra: {
+            Ac1: full.extra.Ac1, Ac3: full.extra.Ac3, Ms: full.extra.Ms, BsTop: full.extra.BsTop,
+            tRamp: full.extra.tRamp, tHoldEnd: full.extra.tHoldEnd, tEnd: tEnd,
+            austF: full.extra.austF, grain: full.extra.grain, caseDepth: full.extra.caseDepth,
+            fracS: full.extra.fracS, fracC: full.extra.fracC,
+            zoneName: full.extra.zoneName, zoneOff: full.extra.zoneOff, medName: full.extra.medName,
+            temperOn: full.extra.temperOn, temperT: full.extra.temperT, soften: full.extra.soften,
+            live: true
+          }
+        };
+      }
+    };
+    return api;
+  }
+
   function createLive(moduleId, params, variantId) {
     var M = getModule(moduleId);
     var p = normalizeParams(M, params);
@@ -467,6 +512,7 @@
     if (moduleId === 'rd') return liveRd(M, p, v);
     if (moduleId === 'kiln') return liveKiln(M, p, v);
     if (moduleId === 'heat') return liveHeat(M, p, v);
+    if (moduleId === 'quench') return liveQuench(M, p, v);
     return liveSolid(M, p, v);
   }
 
