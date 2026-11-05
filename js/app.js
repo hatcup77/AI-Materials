@@ -259,13 +259,12 @@
   }
 
   /* ----------------------------- 初始化 ----------------------------- */
-  /* 窄屏兜底：窗口不足 1180px 时提示一次，用户可关闭 */
-  var narrowDismissed = false;
-  function updateNarrowHint() {
-    var el = $('#narrowHint');
-    if (!el) return;
-    var narrow = window.innerWidth < 1180;
-    el.hidden = !(narrow && !narrowDismissed);
+  /* 手机窄屏可折叠参数，运行按钮始终可用。 */
+  function setParamsOpen(open) {
+    var button = $('#btnParams');
+    $('.panel-left').classList.toggle('params-open', open);
+    button.setAttribute('aria-expanded', String(open));
+    button.textContent = open ? '收起参数' : '展开参数';
   }
 
   function init() {
@@ -298,14 +297,10 @@
         resizeRaf = null;
         drawViz();
         renderProcessChart();
-        updateNarrowHint();
       });
     });
-    updateNarrowHint();
-    var nhClose = $('#btnNarrowClose');
-    if (nhClose) nhClose.addEventListener('click', function () {
-      narrowDismissed = true;
-      $('#narrowHint').hidden = true;
+    $('#btnParams').addEventListener('click', function () {
+      setParamsOpen(this.getAttribute('aria-expanded') !== 'true');
     });
     if (window.ResizeObserver) {
       var ro = new ResizeObserver(function () { drawViz(); });
@@ -378,12 +373,18 @@
     Sim.listModules().forEach(function (M) {
       var id = M.id;
       var b = document.createElement('button');
-      b.textContent = M.name;
+      b.textContent = id === 'heat' ? '铁碳热处理' : M.name;
       b.dataset.module = id;
       if (id === state.moduleId) b.className = 'active';
       b.addEventListener('click', function () {
         if (state.moduleId === id) return;
         selectModule(id);
+        // 刷新时继续当前实验，而不是回到首页链接最初指定的模块。
+        try {
+          var url = new URL(location.href);
+          url.searchParams.set('m', id);
+          history.replaceState(history.state, '', url.href);
+        } catch (e) {}
       });
       box.appendChild(b);
     });
@@ -421,7 +422,7 @@
       b.classList.toggle('active', active);
       b.setAttribute('aria-pressed', String(active));
     });
-    $('#moduleTag').textContent = M.name;
+    $('#moduleTitle').textContent = M.name;
 
     state.seriesVisible = {};
     // 默认显示几条曲线由各实验声明：过程量多、互不遮挡的实验可以全开
@@ -606,9 +607,7 @@
   function paintRange(input) {
     var min = parseFloat(input.min), max = parseFloat(input.max), v = parseFloat(input.value);
     var pct = ((v - min) / (max - min)) * 100;
-    input.style.background =
-      'linear-gradient(90deg, ' + cssVar('--chart-1', '#3ddbe8') + ' ' + pct +
-      '%, var(--fill-6) ' + pct + '%)';
+    input.style.setProperty('--range-fill', pct + '%');
   }
 
   function syncParamInputs() {
@@ -694,7 +693,7 @@
      再把结果与回放放出来；回放走到结尾才弹完成提示。 */
   var RUN_SOLVE_MS = 720;
   var runBusyTimer = null;
-  var RUN_HINT_IDLE = '调整参数后点击运行，结果将自动写入数据记录';
+  var RUN_HINT_IDLE = '完成后自动保存到「数据与报告」';
 
   function setRunBusy(on) {
     state.busy = !!on;
@@ -707,7 +706,7 @@
     var stage = $('.stage');
     if (stage) stage.classList.toggle('solving', !!on);
     var hint = $('.run-hint');
-    if (hint) hint.textContent = on ? '网格已划分，正在迭代求解…' : RUN_HINT_IDLE;
+    if (hint) hint.textContent = on ? '正在计算本次实验…' : RUN_HINT_IDLE;
     // 求解时别再挂着上一轮的"本次计算 x ms"，那组数字已经过期
     if (on) $('#tabInfo').textContent = '正在求解…';
   }
@@ -720,6 +719,10 @@
   }
 
   function showDoneDialog(run) {
+    if (run && document.body.classList.contains('assistant-open')) {
+      toast('仿真完成，已记入数据与报告');
+      return;
+    }
     if (!run) return;
     var list = run.metrics || [];
     var picked = [];
@@ -893,6 +896,8 @@
       .filter(function (s) { return state.seriesVisible[s.key]; })
       .map(function (s, i) {
         return {
+          key: s.key,
+          primary: s.primary,
           name: s.name,
           data: run.series[s.key],
           color: s.color,
@@ -903,9 +908,20 @@
           dashed: s.solid ? false : (s.axis === 'right')
         };
       });
-    var primaryDef = metricDef(run, run.primaryKey);
+    var leftVisible = series.filter(function (s) { return s.axis !== 'right'; });
+    var yLabel = '';
+    if (leftVisible.length === 1) {
+      yLabel = leftVisible[0].name + (leftVisible[0].unit ? ' / ' + leftVisible[0].unit : '');
+    } else if (leftVisible.length > 1) {
+      var leftUnit = leftVisible[0].unit;
+      var sameLeftUnit = leftVisible.every(function (s) { return s.unit === leftUnit; });
+      yLabel = sameLeftUnit && leftUnit ? (leftUnit === '%' ? '比例' : '同量纲') + ' / ' + leftUnit : '多指标';
+    }
     var tKey = paramDef('t');
-    var markerOn = state.frame < 0.999;
+    var markerSeries = series.find(function (s) { return s.key === run.primaryKey; }) ||
+      series.find(function (s) { return s.primary; }) || series[0];
+    var markerFrame = run.live ? 1 : state.frame;
+    var markerValue = markerSeries ? seriesAt(run, markerSeries.key, markerFrame) : null;
     var rightVisible = series.filter(function (s) { return s.axis === 'right'; });
     var sameUnit = rightVisible.length > 1 && rightVisible.every(function (s) { return s.unit === rightVisible[0].unit; });
     var y2Label = rightVisible.length === 1
@@ -919,14 +935,15 @@
       xMin: 0,
       xMax: xEnd > 0 ? xEnd : undefined,
       xLabel: '时间 / ' + (tKey ? tKey.unit : 'min'),
-      yLabel: primaryDef.label + ' / ' + primaryDef.unit,
+      yLabel: yLabel,
       y2Label: y2Label,
       xUnit: ' ' + (tKey ? tKey.unit : 'min'),
       xTipLabel: 't',
       series: series,
-      markers: markerOn ? [{
-        x: run.time[Math.round(state.frame * (run.time.length - 1))],
-        y: seriesAt(run, run.primaryKey, state.frame),
+      markers: state.frame < 0.999 && markerValue != null && isFinite(markerValue) ? [{
+        x: run.time[Math.round(markerFrame * (run.time.length - 1))],
+        y: markerValue,
+        axis: markerSeries.axis,
         color: Charts.THEME.mark, label: '当前时刻'
       }] : []
     });
@@ -1049,6 +1066,7 @@
     $('#btnRun').addEventListener('click', function () {
       // 实时模式下整件事交给 runSim（它会重置并开始演算），
       // 绝不能再启动 tick()，否则两套 rAF 同时推进，暂停键会失效
+      if (!isTabActive('bench')) showTab('bench');
       if (state.live.on) { runSim({ preview: false }); return; }
       if (state.busy) return;          // 求解动画期间重复点击直接忽略
       stopAll();
@@ -1639,7 +1657,12 @@
   /* ----------------------------- 对比分析 ----------------------------- */
   function showTab(name, focus) {
     var target = $('#mainTabs [data-tab="' + name + '"]');
-    $$('#mainTabs .tab').forEach(function (t) { t.classList.toggle('active', t === target); });
+    $$('#mainTabs .tab').forEach(function (t) {
+      var active = t === target;
+      t.classList.toggle('active', active);
+      t.setAttribute('aria-selected', String(active));
+      t.tabIndex = active ? 0 : -1;
+    });
     $$('.tab-body').forEach(function (b) { b.classList.toggle('active', b.dataset.body === name); });
     if (name === 'response') renderSweep();
     if (name === 'compare') renderCompare();
@@ -1652,8 +1675,16 @@
   }
 
   function bindTabs() {
-    $$('#mainTabs .tab').forEach(function (t) {
+    var tabs = $$('#mainTabs .tab');
+    tabs.forEach(function (t, i) {
       t.addEventListener('click', function () { showTab(t.dataset.tab); });
+      t.addEventListener('keydown', function (e) {
+        var next = { ArrowLeft: (i + tabs.length - 1) % tabs.length,
+          ArrowRight: (i + 1) % tabs.length, Home: 0, End: tabs.length - 1 }[e.key];
+        if (typeof next !== 'number') return;
+        e.preventDefault();
+        showTab(tabs[next].dataset.tab, true);
+      });
     });
   }
 
@@ -1898,7 +1929,7 @@
     var wrap = $('#dataTableWrap');
     if (!list.length) {
       wrap.innerHTML = '<div class="empty-state"><span class="es-ico">▤</span>' +
-        '当前模块尚无实验记录<br>在「虚拟实验台」点击「运行仿真」后自动记录</div>';
+        '当前模块尚无实验记录<br>点击「运行仿真」后自动记录</div>';
       syncCompareDraft();
       return;
     }
@@ -2003,36 +2034,51 @@
     updateAiTag();
   }
 
-  /* ---------- 右栏可收起：展开 / 收起两种形态 ---------- */
-  var AI_COLLAPSE_KEY = 'hdu-lab-ai-collapsed';
-
-  function setAiCollapsed(on, silent) {
-    on = !!on;
-    document.body.classList.toggle('ai-collapsed', on);
-    var rail = $('#btnAiExpand');
-    var btn = $('#btnAiCollapse');
-    if (rail) rail.setAttribute('aria-expanded', on ? 'false' : 'true');
-    if (btn) btn.setAttribute('aria-expanded', on ? 'false' : 'true');
-    try { localStorage.setItem(AI_COLLAPSE_KEY, on ? '1' : '0'); } catch (e) {}
-    // 栏宽变化后中间实验区也会变宽，画布需要按新尺寸重画一次
-    requestAnimationFrame(function () {
-      drawViz();
-      if (!on) {
-        var cv = $('#sensCanvas');
-        if (cv && cv.__chart) Charts.render(cv);
+  /* AI 助手按需打开，图表不需要为侧栏重新排版。 */
+  function initAiCollapse() {
+    var trigger = $('#btnAiExpand');
+    var close = $('#btnAiCollapse');
+    var panel = $('#aiPanel');
+    var backdrop = $('#aiBackdrop');
+    var layer = panel.parentElement;
+    var change = 0;
+    function toggle(open) {
+      var token = ++change;
+      if (open && layer.hidden) {
+        layer.hidden = false;
+        // Commit the starting position before applying the open state.
+        void panel.offsetWidth;
+      }
+      document.body.classList.toggle('assistant-open', open);
+      trigger.setAttribute('aria-expanded', String(open));
+      $('.app').inert = open;
+      if (open) {
+        panel.inert = false;
+        close.focus({ preventScroll: true });
+        var canvas = $('#sensCanvas');
+        if (canvas.__chart) Charts.render(canvas);
+      } else {
+        trigger.focus({ preventScroll: true });
+        panel.inert = true;
+        var animations = panel.getAnimations ? panel.getAnimations().concat(backdrop.getAnimations()) : [];
+        if (!animations.length) layer.hidden = true;
+        else Promise.allSettled(animations.map(function (animation) { return animation.finished; })).then(function () {
+          // A rapid reopen may have reversed these transitions.
+          if (token === change) layer.hidden = true;
+        });
+      }
+    }
+    trigger.addEventListener('click', function () { toggle(true); });
+    close.addEventListener('click', function () { toggle(false); });
+    backdrop.addEventListener('click', function () { toggle(false); });
+    panel.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !$('.modal.open')) {
+        e.preventDefault();
+        toggle(false);
+      } else if (e.key === 'Tab') {
+        trapTab(e, panel);
       }
     });
-    if (!silent && !on) toast('AI 实验助手已展开');
-  }
-
-  function initAiCollapse() {
-    var rail = $('#btnAiExpand');
-    var btn = $('#btnAiCollapse');
-    if (rail) rail.addEventListener('click', function () { setAiCollapsed(false); });
-    if (btn) btn.addEventListener('click', function () { setAiCollapsed(true); });
-    var saved = '0';
-    try { saved = localStorage.getItem(AI_COLLAPSE_KEY) || '0'; } catch (e) {}
-    setAiCollapsed(saved === '1', true);
   }
 
   /* ---------- 外部大模型：配置、上下文、对话 ---------- */
@@ -2331,7 +2377,7 @@
       var cfg = AI.saveConfig(readConfigForm());
       aiChat.ctxAcked = false;      // 换了接口，数据流向要重新告知
       updateAiTag();
-      $('#aiConfigModal').classList.remove('open');
+      closeModal($('#aiConfigModal'));
       toast(cfg.base && cfg.model ? '已保存：' + cfg.model : '配置已保存');
     });
     $('#btnAiCfgClear').addEventListener('click', function () {
@@ -2388,10 +2434,12 @@
 
   function openAiConfig() {
     fillAiConfigForm(AI.readConfig());
-    $('#aiConfigModal').classList.add('open');
+    var modal = $('#aiConfigModal');
+    if (!modal.classList.contains('open')) modal.returnFocus = document.activeElement;
+    modal.classList.add('open');
     setTimeout(function () {
       var b = $('#aiCfgBase');
-      if (b) b.focus();
+      if (b && b.closest('.modal.open')) b.focus();
     }, 80);
   }
 
@@ -2497,33 +2545,43 @@
   }
 
   /* ------------------------------ 弹窗 ------------------------------ */
+  function trapTab(e, container) {
+    var focusable = $$('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])', container)
+      .filter(function (el) { return el.offsetParent !== null; });
+    if (!focusable.length) return;
+    var first = focusable[0], last = focusable[focusable.length - 1];
+    var active = document.activeElement;
+    if (e.shiftKey && (active === first || !container.contains(active))) {
+      e.preventDefault(); last.focus();
+    } else if (!e.shiftKey && (active === last || !container.contains(active))) {
+      e.preventDefault(); first.focus();
+    }
+  }
+
+  function closeModal(modal) {
+    if (!modal.classList.contains('open')) return;
+    modal.classList.remove('open');
+    var trigger = modal.returnFocus;
+    modal.returnFocus = null;
+    if (trigger && trigger.isConnected) trigger.focus({ preventScroll: true });
+  }
+
   function bindModal() {
     $$('.modal').forEach(function (m) {
       m.addEventListener('click', function (e) {
-        if (e.target === m) m.classList.remove('open');
+        if (e.target === m) closeModal(m);
       });
-      // 焦点陷阱：Tab 在弹窗内循环，不会跑到背后的实验台去
       m.addEventListener('keydown', function (e) {
-        if (e.key !== 'Tab') return;
-        var f = $$('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])', m)
-          .filter(function (el) { return el.offsetParent !== null; });
-        if (!f.length) return;
-        var first = f[0], last = f[f.length - 1];
-        var act = document.activeElement;
-        if (e.shiftKey && (act === first || !m.contains(act))) {
-          e.preventDefault(); last.focus();
-        } else if (!e.shiftKey && (act === last || !m.contains(act))) {
-          e.preventDefault(); first.focus();
-        }
+        if (e.key === 'Tab') trapTab(e, m);
       });
     });
     $$('[data-close]').forEach(function (b) {
       b.addEventListener('click', function () {
-        document.getElementById(b.dataset.close).classList.remove('open');
+        closeModal(document.getElementById(b.dataset.close));
       });
     });
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') $$('.modal').forEach(function (m) { m.classList.remove('open'); });
+      if (e.key === 'Escape' && !e.defaultPrevented) $$('.modal.open').forEach(closeModal);
     });
   }
 
@@ -2694,6 +2752,7 @@
     $$('.modal').forEach(function (m) { m.classList.remove('open'); });
     if (mod !== state.moduleId) selectModule(mod);
     if (!param) return;
+    setParamsOpen(true);
     setTimeout(function () {
       var el = $('#paramList .param-item[data-key="' + param + '"]');
       if (!el) return;

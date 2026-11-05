@@ -6,7 +6,7 @@
 <title>AI+ 虚拟仿真材料实验平台 · 杭州电子科技大学</title>
 <meta name="description" content="杭州电子科技大学材料科学与工程虚拟仿真实验教学中心出品：固相反应、化学气相沉积、反应-扩散耦合、马弗炉烧成、Fe-C 热处理与碳钢热处理六个虚拟实验，实时逐步求解、多组对比与实验报告。">
 <link rel="icon" type="image/png" href="assets/favicon.png">
-<meta name="theme-color" content="#f5f7fa">
+<meta name="theme-color" content="#f3f9f6">
 <script>
   /* 首屏即应用主题，避免刷新时闪白/闪黑 */
   (function () {
@@ -21,158 +21,114 @@
 </head>
 <body class="home">
 
-<div class="home-wrap">
-
-  <!-- ======================= 顶栏 ======================= -->
   <header class="topbar home-topbar">
-    <a class="brand brand-link" href="index.html">
-      <span class="brand-mark">
-        <img class="bm-light" src="assets/hdu-emblem-light.png" alt="杭州电子科技大学校徽">
-        <img class="bm-blue" src="assets/hdu-emblem-blue.png" alt="">
-      </span>
-      <span class="brand-text">
-        <h1>AI+ 虚拟仿真材料实验平台</h1>
-        <p>杭州电子科技大学 · 材料科学与工程虚拟仿真实验教学中心</p>
-      </span>
-    </a>
-    <div class="top-right">
-      <button class="btn ghost" id="btnHistory" type="button" aria-expanded="false"
-              aria-controls="histModal">更新历史</button>
-      <a class="btn ghost" href="lab.html">实验台</a>
-      <button class="theme-switch" id="btnTheme" role="switch" aria-checked="false"
-              title="切换亮色 / 深色模式" aria-label="切换亮色 / 深色模式">
-        <i class="ts-ico sun">☀</i><i class="ts-ico moon">☾</i><span class="ts-knob"></span>
-      </button>
+    <div class="home-container home-nav">
+      <a class="brand brand-link" href="index.html">
+        <span class="brand-mark" aria-hidden="true">
+          <img class="bm-light" src="assets/hdu-emblem-light.png" alt="">
+          <img class="bm-blue" src="assets/hdu-emblem-blue.png" alt="">
+        </span>
+        <span class="brand-text">
+          <span class="brand-name">材料仿真实验室</span>
+          <span class="brand-org">杭州电子科技大学</span>
+        </span>
+      </a>
+      <nav class="top-right" aria-label="平台导航">
+        <button class="btn ghost" id="btnHistory" type="button" aria-expanded="false" aria-controls="histModal">更新历史</button>
+        <a class="btn ghost home-lab-link" href="lab.html">实验台 <span aria-hidden="true">↗</span></a>
+        <button class="theme-switch" id="btnTheme" type="button" role="switch" aria-checked="false" title="切换亮色 / 深色模式" aria-label="深色模式">
+          <i class="ts-ico sun" aria-hidden="true">☀</i><i class="ts-ico moon" aria-hidden="true">☾</i><span class="ts-knob"></span>
+        </button>
+      </nav>
     </div>
   </header>
 
-  <main class="home-main">
-
-    <!-- ======================= 首屏 ======================= -->
-    <section class="hero">
+  <main class="home-container">
+    <section class="hero" aria-labelledby="heroTitle">
       <div class="hero-copy">
-        <p class="hero-eyebrow">材料科学与工程 · 虚拟实验</p>
-        <h2 class="hero-title">从粉体到薄膜，<br>看见材料的变化</h2>
-        <p class="hero-lead">
-          在六个虚拟实验中调整工艺参数，观察温度、浓度与微观组织随时间变化，再对比结果。
-        </p>
+        <div class="hero-eyebrow"><span aria-hidden="true"></span> AI+ 虚拟仿真材料实验平台</div>
+        <h1 id="heroTitle">材料怎么变？<br><em>动手做个实验。</em></h1>
+        <p class="hero-lead">从粉体烧结到薄膜沉积，亲手调整工艺参数，看见温度、浓度和微观组织如何变化。</p>
         <div class="hero-actions">
-          <a class="btn primary hero-btn" href="lab.html">进入实验台</a>
-          <a class="btn ghost hero-btn" href="#experiments">浏览实验模块 <span aria-hidden="true">↓</span></a>
+          <a class="btn primary hero-btn" href="lab.html">进入实验台 <span aria-hidden="true">→</span></a>
+          <a class="btn ghost hero-btn" href="#experiments">选择实验 <span aria-hidden="true">↓</span></a>
         </div>
-        <dl class="hero-facts">
-          <div><dt>6</dt><dd>实验模块</dd></div>
-          <div><dt>58</dt><dd>材料体系</dd></div>
-          <div><dt>98</dt><dd>专业术语</dd></div>
-        </dl>
+        <div class="hero-facts" aria-label="平台资源">
+          <span><b>06</b> 实验模块</span><span><b>58</b> 材料体系</span><span><b>98</b> 专业术语</span>
+        </div>
       </div>
 
       <figure class="hero-art">
-        <div class="ha-frame" aria-hidden="true">
-          <span class="ha-kicker">炉膛截面 <span>·</span> 温度场示意</span>
-          <span class="ha-heater"></span>
-          <span class="ha-iso i1"></span>
-          <span class="ha-iso i2"></span>
-          <span class="ha-iso i3"></span>
-          <span class="ha-sample"></span>
-          <span class="ha-label lb1">设定 1050 ℃</span>
-          <span class="ha-label lb2">样品 968 ℃</span>
-        </div>
-        <figcaption class="ha-caption"><span>马弗炉烧成</span> 同一设定温度下，样品的位置会影响实际温度。</figcaption>
+        <div class="specimen-head"><span>材料组织示意</span><span class="specimen-id">FIG. 01</span></div>
+        <img src="assets/grain-sample.svg" width="720" height="435" alt="材料截面的多边形晶粒与晶界示意图">
+        <figcaption><span><i aria-hidden="true"></i> 多晶材料截面</span><span>晶粒与晶界</span></figcaption>
       </figure>
     </section>
 
-    <!-- ======================= 模块入口 ======================= -->
-    <section class="sec" id="experiments">
+    <section class="experiments" id="experiments" aria-labelledby="experimentsTitle">
       <div class="sec-head">
-        <h3>选择实验</h3>
-        <p>从一个工艺入手，调参数、运行仿真并导出结果。</p>
+        <div><p class="sec-kicker">EXPERIMENTS</p><h2 id="experimentsTitle">选择实验</h2></div>
+        <p>选择一个模块，调整条件并比较实验结果。</p>
       </div>
-
       <div class="mod-grid">
-        <a class="mod-card" href="lab.html?m=solid">
-          <span class="mod-idx">01</span>
-          <h4>固相反应合成</h4>
-          <p class="mod-desc">探索烧结温度和保温时间如何影响转化率、晶粒尺寸与致密度。</p>
-          <span class="mod-go" aria-hidden="true">↗</span>
+        <a class="mod-card mod-solid" href="lab.html?m=solid">
+          <div class="mod-top"><span class="mod-icon"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m16 3 11 6.5v13L16 29 5 22.5v-13L16 3Z M5 9.5 16 16l11-6.5M16 16v13M10.5 6.2l11 6.6"/></svg></span><span class="mod-idx">01</span></div>
+          <h3>固相反应合成</h3>
+          <p>调节烧结温度与保温时间，观察转化率、晶粒和致密度。</p>
+          <span class="mod-go">开始实验 <span aria-hidden="true">↗</span></span>
         </a>
-
-        <a class="mod-card" href="lab.html?m=cvd">
-          <span class="mod-idx">02</span>
-          <h4>化学气相沉积</h4>
-          <p class="mod-desc">比较表面反应与气相输运，判断哪一步限制薄膜生长。</p>
-          <span class="mod-go" aria-hidden="true">↗</span>
+        <a class="mod-card mod-cvd" href="lab.html?m=cvd">
+          <div class="mod-top"><span class="mod-icon"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m4 21 12 5 12-5m-24 5 12 5 12-5M8 4v11m-3-3 3 3 3-3m5-10v11m-3-3 3 3 3-3m5-6v11m-3-3 3 3 3-3"/></svg></span><span class="mod-idx">02</span></div>
+          <h3>化学气相沉积</h3>
+          <p>调节温度、压力和气体流量，比较薄膜生长速率。</p>
+          <span class="mod-go">开始实验 <span aria-hidden="true">↗</span></span>
         </a>
-
-        <a class="mod-card" href="lab.html?m=rd">
-          <span class="mod-idx">03</span>
-          <h4>反应-扩散耦合</h4>
-          <p class="mod-desc">观察浓度在二维空间的分布，以及反应前沿的推进。</p>
-          <span class="mod-go" aria-hidden="true">↗</span>
+        <a class="mod-card mod-rd" href="lab.html?m=rd">
+          <div class="mod-top"><span class="mod-icon"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3.5" y="3.5" width="25" height="25" rx="3"/><path d="M10 4v24m12-24v24M4 10h24M4 22h24m-15-6h7m-3-3 3 3-3 3"/></svg></span><span class="mod-idx">03</span></div>
+          <h3>反应与扩散</h3>
+          <p>在二维浓度场中追踪反应前沿，观察物质如何扩散。</p>
+          <span class="mod-go">开始实验 <span aria-hidden="true">↗</span></span>
         </a>
-
-        <a class="mod-card" href="lab.html?m=kiln">
-          <span class="mod-idx">04</span>
-          <h4>马弗炉烧成</h4>
-          <p class="mod-desc">调整装炉位置，比较炉膛内不同位置的温度历程。</p>
-          <span class="mod-go" aria-hidden="true">↗</span>
+        <a class="mod-card mod-kiln" href="lab.html?m=kiln">
+          <div class="mod-top"><span class="mod-icon"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="4" y="7" width="24" height="22" rx="3"/><path d="M8 12h16v12H8zm3 8c0-2 2-2 2-4m3 4c0-2 2-2 2-4m3 4c0-2 2-2 2-4"/></svg></span><span class="mod-idx">04</span></div>
+          <h3>马弗炉烧成</h3>
+          <p>移动样品在炉内的位置，比较不同位置的温度历程。</p>
+          <span class="mod-go">开始实验 <span aria-hidden="true">↗</span></span>
         </a>
-
-        <a class="mod-card" href="lab.html?m=heat">
-          <span class="mod-idx">05</span>
-          <h4>热处理</h4>
-          <p class="mod-desc">比较正火、淬火、回火和退火对 Fe-C 合金组织的影响。</p>
-          <span class="mod-go" aria-hidden="true">↗</span>
+        <a class="mod-card mod-heat" href="lab.html?m=heat">
+          <div class="mod-top"><span class="mod-icon"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 5v23h25M7 23l6-14h8v8l6 5"/><circle cx="21" cy="9" r="2"/></svg></span><span class="mod-idx">05</span></div>
+          <h3>铁碳合金热处理</h3>
+          <p>比较正火、淬火、回火和退火对铁碳合金组织、硬度和磁性的影响。</p>
+          <span class="mod-go">开始实验 <span aria-hidden="true">↗</span></span>
         </a>
-
-        <a class="mod-card" href="lab.html?m=quench">
-          <span class="mod-idx">06</span>
-          <h4>碳钢热处理</h4>
-          <p class="mod-desc">20 / 45 / T8 钢的加热、淬火与回火：在 CCT 图上追踪冷却曲线，测定淬硬层。</p>
-          <span class="mod-go" aria-hidden="true">↗</span>
+        <a class="mod-card mod-quench" href="lab.html?m=quench">
+          <div class="mod-top"><span class="mod-icon"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 5v23h24M9 9c15 1 5 14 17 15M17 6c-8 4-9 12-7 19"/><circle cx="12" cy="13" r="2"/></svg></span><span class="mod-idx">06</span></div>
+          <h3>碳钢热处理</h3>
+          <p>在 CCT 图上追踪表面和心部的冷却曲线，比较淬硬层和回火后的硬度。</p>
+          <span class="mod-go">开始实验 <span aria-hidden="true">↗</span></span>
         </a>
       </div>
     </section>
 
-    <!-- ======================= 能力 ======================= -->
-    <section class="sec">
+    <section class="workflow" aria-labelledby="workflowTitle">
       <div class="sec-head">
-        <h3>实验工具</h3>
-        <p>从观察过程到整理报告，在同一个实验台完成。</p>
+        <div><p class="sec-kicker">WORKFLOW</p><h2 id="workflowTitle">在实验台完成整套实验</h2></div>
       </div>
-
-      <div class="cap-grid">
-        <div class="cap">
-          <h4>实时演算</h4>
-          <p>逐步求解，可暂停、变速和在途中调整参数。</p>
-        </div>
-        <div class="cap">
-          <h4>多组对比</h4>
-          <p>叠加过程曲线，逐项比较不同工艺的关键指标。</p>
-        </div>
-        <div class="cap">
-          <h4>AI 实验助手</h4>
-          <p>进行工艺寻优、敏感性分析和结果解读。</p>
-        </div>
-        <div class="cap">
-          <h4>术语与报告</h4>
-          <p>查阅术语，导出 CSV 或生成实验报告。</p>
-        </div>
-      </div>
+      <ol class="workflow-grid">
+        <li><span>01</span><div><h3>设置条件</h3><p>选材料和预设，也可逐项调整实验参数。</p></div></li>
+        <li><span>02</span><div><h3>观察过程</h3><p>播放仿真，查看组织演化、曲线和关键指标。</p></div></li>
+        <li><span>03</span><div><h3>对比与分析</h3><p>比较多组结果，用 AI 助手做工艺寻优和敏感性分析。</p></div></li>
+        <li><span>04</span><div><h3>整理报告</h3><p>查阅术语、导出 CSV，或打印实验报告。</p></div></li>
+      </ol>
     </section>
-
   </main>
 
   <footer class="home-foot">
-    <div>
-      <span>杭州电子科技大学 · 材料科学与工程学院</span>
-      <span class="dot">·</span>
-      <span>虚拟仿真实验教学中心</span>
+    <div class="home-container">
+      <strong>杭州电子科技大学 · 材料科学与工程虚拟仿真实验教学中心</strong>
+      <p>实验记录保存在当前浏览器。配置外部 AI 后，仅在主动发送问题时调用该接口，可选择是否附带实验摘要。</p>
     </div>
-    <p>纯静态页面：实验数据与密钥只保存在本机浏览器，默认不上传服务器；接入外部大模型对话时，仅发送当前工况摘要（模块、材料、参数、指标）。</p>
   </footer>
-
-</div>
 
 <!-- ======================= 更新历史 ======================= -->
 <div class="modal" id="histModal" role="dialog" aria-modal="true" aria-labelledby="histTitle">
@@ -189,6 +145,13 @@
       <ol class="hist-list">
         <li class="hist-item">
           <div class="hist-date">2026-11-05<span class="hist-badge">最新</span></div>
+          <ul class="hist-points">
+            <li>新增碳钢热处理：可选 20 钢、45 钢和 T8 钢，对比退火、正火、水淬、油淬与调质。</li>
+            <li>可在 CCT 图上同时观察表面和心部的冷却路径，并查看截面组织、硬度和淬硬层深度。术语库新增 5 条相关术语。</li>
+          </ul>
+        </li>
+        <li class="hist-item">
+          <div class="hist-date">2026-11-05</div>
           <ul class="hist-points">
             <li>新增 Fe-C 热处理模块。正火、淬火、回火、退火四种工艺一键切换，六种牌号从电磁纯铁到 T12 工具钢，冷却速度 0.02 到 200 ℃/s 连续可调。</li>
             <li>组织图、温度曲线、晶胞结构三块联动：冷速一变，珠光体经索氏体、托氏体、贝氏体一路转到马氏体，硬度与矫顽力同步抬升。</li>
@@ -253,10 +216,10 @@
       // 回到上次用过的模块
       try {
         var last = localStorage.getItem('hdu-lab-last-module');
-        if (last && /^(solid|cvd|rd|kiln|heat)$/.test(last)) {
+        if (last && /^(solid|cvd|rd|kiln|heat|quench)$/.test(last)) {
           var entry = document.querySelector('.hero-actions a.hero-btn');
           if (entry) entry.href = 'lab.html?m=' + last;
-          var top = document.querySelector('.top-right a.btn');
+          var top = document.querySelector('.home-lab-link');
           if (top) top.href = 'lab.html?m=' + last;
         }
       } catch (e) {}

@@ -146,7 +146,7 @@
 
   function render(canvas) {
     var cfg = canvas.__chart;
-    if (!cfg) return;
+    if (!cfg || !canvas.clientWidth || !canvas.clientHeight) return;
     syncTheme();
     if (cfg.type === 'line') drawLine(canvas, cfg);
     else if (cfg.type === 'bar') drawBar(canvas, cfg);
@@ -332,7 +332,7 @@
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(mx, y0); ctx.lineTo(mx, y1); ctx.stroke();
       ctx.setLineDash([]);
-      var my = sy(mk.y);
+      var my = (mk.axis === 'right' ? sy2 : sy)(mk.y);
       ctx.beginPath();
       ctx.arc(mx, my, 5, 0, 6.2832);
       ctx.strokeStyle = mk.color || T.mark;
@@ -588,7 +588,7 @@
     var items = cfg.items || [];
     var pad = { l: 84, r: 74, t: 20, b: 16 };
     var x0 = pad.l, x1 = W - pad.r, y0 = pad.t, y1 = H - pad.b;
-    if (!items.length) return;
+    if (!items.length || x1 <= x0 || y1 <= y0) return;
 
     var mn = Infinity, mx = -Infinity;
     items.forEach(function (it) {

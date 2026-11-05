@@ -1,0 +1,151 @@
+/* Workbench layout. The simulation, charts and dialogs use the shared styles. */
+.lab .app { min-width: 0; }
+.lab-topbar { gap: 12px; padding-inline: 24px; height: 62px; flex-basis: 62px; }
+.lab-topbar .top-right { gap: 7px; }
+.lab-topbar .btn { min-height: 35px; }
+.lab-topbar .btn.ghost { border-color: transparent; background: transparent; }
+.lab-topbar .btn.ghost:hover, .assistant-trigger:hover { background: var(--fill-5); }
+.assistant-trigger { color: var(--cyan); background: var(--accent-soft); border-color: var(--line); font-weight: 650; }
+.assistant-trigger span { font-size: 15px; line-height: 1; }
+.lab-nav { padding: 8px 24px; gap: 16px; }
+.lab-nav-label { font-weight: 650; }
+.lab-nav .seg { gap: 5px; }
+.lab-nav .seg button { min-height: 36px; padding-inline: 13px; border-radius: 7px; font-size: 13px; }
+.lab-nav .seg button.active { color: var(--accent-ink); background: var(--accent-bg); }
+
+.lab .layout {
+  display: grid;
+  grid-template-columns: clamp(246px, 21vw, 302px) minmax(0, 1fr);
+  gap: 14px;
+  padding: 14px;
+  transition: none;
+}
+.lab .panel-left {
+  padding: 0; min-width: 0; display: flex; flex-direction: column;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 13px; overflow: hidden;
+}
+.params-head { margin: 0; padding: 14px 16px 12px; border-bottom: 1px solid var(--line); flex-shrink: 0; gap: 8px; }
+.stage-kicker { color: var(--cyan); margin: 0 0 3px; font-weight: 650; font-size: 11px; letter-spacing: .09em; }
+.params-head h2 { font-size: 16px; letter-spacing: 0; font-weight: 700; padding: 0; }
+.params-head h2::before { display: none; }
+#btnParams { display: none; }
+.lab .parameter-scroll { flex: 1; min-height: 0; padding: 14px 16px; overflow-y: auto; }
+.lab .run-actions { padding: 12px 16px; border-top: 1px solid var(--line); background: var(--panel); }
+.lab .run-btn { margin-top: 0; letter-spacing: 0; }
+.lab .field-label { font-size: 12px; font-weight: 650; }
+.lab .material-note, .lab .param-hint { opacity: 1; font-size: 11px; }
+.lab .param-range::-webkit-slider-runnable-track {
+  background: linear-gradient(90deg, var(--cyan) var(--range-fill, 0%), var(--fill-6) 0);
+}
+.lab .param-range::-moz-range-progress { background: var(--cyan); height: 4px; border-radius: 3px; }
+.lab input[type="range"]::-webkit-slider-thumb { box-shadow: 0 1px 3px var(--line2); }
+.lab .viz-bar input[type="range"] { min-width: 0; }
+
+.lab .stage { padding: 0; container-type: inline-size; }
+.stage-head { display: flex; justify-content: space-between; align-items: end; gap: 8px; padding: 4px 2px 11px; }
+.stage-head h1 { margin: 0; color: var(--txt); font-size: clamp(21px, 2vw, 28px); line-height: 1.2; letter-spacing: -.045em; }
+.stage-head .tab-info { padding: 0 0 2px; margin: 0; font-size: 11.5px; text-align: right; }
+.lab .tabs { gap: 2px 8px; min-height: 43px; flex: 0 0 auto; }
+.lab .tab { min-height: 42px; font-size: 13px; padding: 7px 9px; }
+.lab .tab.active::after { left: 9px; right: 9px; }
+.lab .tab-body { padding: 12px 2px 0 0; }
+.lab .kpi-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.lab .kpi { padding: 10px 10px 9px 12px; min-height: 75px; }
+.lab .kpi .k-label { font-size: 11.5px; }
+.lab .kpi .k-val { font: 650 clamp(16px, 1.52vw, 22px)/1.15 var(--mono); }
+.lab .kpi .k-meta { font-size: 10.5px; }
+.lab .card { padding: 13px; }
+.lab .card-head h3 { font-size: 14px; font-weight: 700; letter-spacing: 0; }
+.lab .card-sub { font-size: 11px; line-height: 1.55; }
+.lab .viz-grid { grid-template-columns: minmax(0, 1fr); }
+.lab .viz-card .canvas-wrap { height: 278px; flex: 1 0 auto; }
+.lab .chart-card .chart-wrap.tall { min-height: 265px; }
+.lab .card-head .seg { flex-wrap: wrap; }
+@container (min-width: 760px) {
+  .lab .kpi-row { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
+  .lab .viz-grid { grid-template-columns: minmax(0, 1.06fr) minmax(0, 1fr); }
+  .lab .compare-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* 碳钢模块的截面、CCT、温度和炉膛示意共用一张画布。 */
+.lab[data-module="quench"] .viz-grid { grid-template-columns: minmax(0, 1fr); }
+.lab[data-module="quench"] .viz-card .canvas-wrap { height: 360px; }
+@container (max-width: 652px) {
+  .lab[data-module="quench"] .viz-card .canvas-wrap { height: 530px; }
+}
+
+/* Keep the offscreen drawer inside a fixed layer so it cannot widen the page. */
+.assistant-layer {
+  --drawer-duration: 250ms;
+  position: fixed; inset: 0; z-index: 69;
+  overflow: hidden;
+  pointer-events: none;
+}
+.assistant-scrim {
+  position: absolute; inset: 0; background: var(--scrim);
+  opacity: 0;
+  transition: opacity var(--drawer-duration) ease;
+}
+.lab #aiPanel {
+  position: absolute; inset: 0 0 0 auto;
+  width: min(420px, 100%); border: 0; border-left: 1px solid var(--line);
+  box-shadow: var(--sh-card); background: var(--panel);
+  transform: translateX(100%);
+  transition: transform var(--drawer-duration) cubic-bezier(.22, .72, .28, 1);
+}
+.assistant-open .assistant-layer { pointer-events: auto; }
+.assistant-open .assistant-scrim { opacity: 1; }
+.lab.assistant-open #aiPanel { transform: translateX(0); }
+@media (prefers-reduced-motion: reduce) {
+  .assistant-scrim, .lab #aiPanel { transition: none !important; }
+}
+.lab #aiPanel .ai-body { width: 100%; padding: 16px; }
+.lab #aiPanel .panel-head { position: sticky; top: -16px; z-index: 3; background: var(--panel); margin: -16px -16px 14px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.lab #aiPanel .panel-head h2 { font-size: 16px; padding: 0; letter-spacing: 0; }
+.lab #aiPanel .panel-head h2::before { display: none; }
+.lab #btnAiCollapse { display: grid; }
+.lab.assistant-open { overflow: hidden; }
+
+@media (min-width: 801px) {
+  body.lab { overflow: hidden; }
+  .lab .app { height: 100%; }
+  .lab .layout { min-height: 0; }
+  .lab .stage { min-height: 0; }
+  .lab .tab-body { overflow-y: auto; }
+}
+@media (max-width: 800px) {
+  .lab .app { min-height: 100%; height: auto; }
+  .lab-topbar { height: auto; flex-basis: auto; padding: 9px 14px; gap: 7px; }
+  .lab-topbar .top-right { gap: 4px; }
+  .lab-topbar .btn { padding-inline: 8px; }
+  .lab-nav { padding: 8px 14px; gap: 4px; flex-direction: column; align-items: stretch; }
+  .lab-nav .seg { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+  .lab-nav .seg button { padding: 5px 4px; white-space: normal; font-size: 12px; }
+  .lab .layout { grid-template-columns: minmax(0, 1fr); padding: 10px; gap: 14px; }
+  .lab .stage { min-height: 0; order: 2; }
+  .lab .panel-left { order: 1; }
+  .lab .parameter-scroll { overflow: visible; }
+  .lab .tab-body { overflow: visible; padding-right: 0; }
+  .lab .tab { padding-inline: 7px; }
+  .lab .toolbar, .lab .tool-left, .lab .tool-right { flex-wrap: wrap; }
+  .lab .card { padding: 11px; }
+  .lab .stage-head { align-items: start; flex-direction: column; }
+  .lab .stage-head .tab-info { text-align: left; }
+  #btnParams { display: inline-flex; }
+  .lab .panel-left:not(.params-open) .parameter-scroll { display: none; }
+  .lab .run-actions { border-top: 0; }
+  .lab .params-open .run-actions { border-top: 1px solid var(--line); }
+}
+@media (max-width: 480px) {
+  .lab .kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lab-nav .seg { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .lab .tabs { gap: 1px; justify-content: space-between; }
+  .lab .tab { font-size: 12px; padding-inline: 5px; }
+  .lab .tab.active::after { inset-inline: 5px; }
+  .lab .insight-grid, .lab .sweep-grid { grid-template-columns: minmax(0, 1fr); }
+  .lab .modal { padding: 10px; }
+}
+@media print {
+  .assistant-layer { display: none !important; }
+  body.lab { overflow: visible; }
+}
