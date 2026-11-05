@@ -404,7 +404,9 @@
     if (!hasKey) state.sweepKey = (M.paramDefs[0] || {}).key || 'T';
 
     $$('#moduleSwitch button').forEach(function (b) {
-      b.classList.toggle('active', b.dataset.module === id);
+      var active = b.dataset.module === id;
+      b.classList.toggle('active', active);
+      b.setAttribute('aria-pressed', String(active));
     });
     $('#moduleTag').textContent = M.name;
 

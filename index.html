@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI+ 虚拟仿真材料实验平台 · 杭州电子科技大学</title>
 <meta name="description" content="杭州电子科技大学材料科学与工程虚拟仿真实验教学中心出品：固相反应、化学气相沉积、反应-扩散耦合、马弗炉烧成与 Fe-C 热处理五个虚拟实验，实时逐步求解、多组对比与实验报告。">
 <link rel="icon" type="image/png" href="assets/favicon.png">
-<meta name="theme-color" content="#0b1524">
+<meta name="theme-color" content="#f5f7fa">
 <script>
   /* 首屏即应用主题，避免刷新时闪白/闪黑 */
   (function () {
@@ -37,7 +37,7 @@
     </a>
     <div class="top-right">
       <a class="btn ghost" href="lab.html">实验台</a>
-      <button class="theme-switch" id="btnTheme" role="switch" aria-checked="true"
+      <button class="theme-switch" id="btnTheme" role="switch" aria-checked="false"
               title="切换亮色 / 深色模式" aria-label="切换亮色 / 深色模式">
         <i class="ts-ico sun">☀</i><i class="ts-ico moon">☾</i><span class="ts-knob"></span>
       </button>
@@ -49,26 +49,25 @@
     <!-- ======================= 首屏 ======================= -->
     <section class="hero">
       <div class="hero-copy">
-        <p class="hero-eyebrow">杭州电子科技大学 · 材料科学与工程</p>
-        <h2 class="hero-title">从一炉粉体<br>到一层薄膜</h2>
+        <p class="hero-eyebrow">材料科学与工程 · 虚拟实验</p>
+        <h2 class="hero-title">从粉体到薄膜，<br>看见材料的变化</h2>
         <p class="hero-lead">
-          杭电材料学科的五个虚拟实验，共用一套实时求解内核。改一个参数，看到的不只是终值：
-          样品温度怎样滞后于设定值、反应前沿从哪里推进、浓度场在哪个位置先耗尽，都随时间长出来。
+          在五个虚拟实验中调整工艺参数，观察温度、浓度与微观组织随时间变化，再对比结果。
         </p>
         <div class="hero-actions">
           <a class="btn primary hero-btn" href="lab.html">进入实验台</a>
-          <a class="btn ghost hero-btn" href="lab.html?m=kiln">从马弗炉开始</a>
+          <a class="btn ghost hero-btn" href="#experiments">浏览实验模块 <span aria-hidden="true">↓</span></a>
         </div>
         <dl class="hero-facts">
           <div><dt>5</dt><dd>实验模块</dd></div>
+          <div><dt>55</dt><dd>材料体系</dd></div>
           <div><dt>93</dt><dd>专业术语</dd></div>
-          <div><dt>实时</dt><dd>逐步求解</dd></div>
-          <div><dt>本地</dt><dd>默认全程本机求解</dd></div>
         </dl>
       </div>
 
-      <div class="hero-art" aria-hidden="true">
-        <div class="ha-frame">
+      <figure class="hero-art">
+        <div class="ha-frame" aria-hidden="true">
+          <span class="ha-kicker">炉膛截面 <span>·</span> 温度场示意</span>
           <span class="ha-heater"></span>
           <span class="ha-iso i1"></span>
           <span class="ha-iso i2"></span>
@@ -77,56 +76,51 @@
           <span class="ha-label lb1">设定 1050 ℃</span>
           <span class="ha-label lb2">样品 968 ℃</span>
         </div>
-        <p class="ha-caption">同一台炉子，同样的设定温度，样品放在哪里，经历的温度就不一样。</p>
-      </div>
+        <figcaption class="ha-caption"><span>马弗炉烧成</span> 同一设定温度下，样品的位置会影响实际温度。</figcaption>
+      </figure>
     </section>
 
     <!-- ======================= 模块入口 ======================= -->
-    <section class="sec">
+    <section class="sec" id="experiments">
       <div class="sec-head">
-        <h3>五个实验模块</h3>
-        <p>每个模块都是一次完整实验：调参数、跑仿真、比结果、出报告。</p>
+        <h3>选择实验</h3>
+        <p>从一个工艺入手，调参数、运行仿真并导出结果。</p>
       </div>
 
       <div class="mod-grid">
         <a class="mod-card" href="lab.html?m=solid">
           <span class="mod-idx">01</span>
           <h4>固相反应合成</h4>
-          <p class="mod-sub">高温固相法合成功能陶瓷粉体</p>
-          <p class="mod-desc">温度、保温时间、成型压力如何决定转化率、晶粒尺寸与致密度。</p>
-          <span class="mod-go">进入模块 <i>→</i></span>
+          <p class="mod-desc">探索烧结温度和保温时间如何影响转化率、晶粒尺寸与致密度。</p>
+          <span class="mod-go" aria-hidden="true">↗</span>
         </a>
 
         <a class="mod-card" href="lab.html?m=cvd">
           <span class="mod-idx">02</span>
           <h4>化学气相沉积</h4>
-          <p class="mod-sub">低压 CVD 生长薄膜</p>
-          <p class="mod-desc">表面反应与气相输运的串联阻力，看清到底是谁在限速。</p>
-          <span class="mod-go">进入模块 <i>→</i></span>
+          <p class="mod-desc">比较表面反应与气相输运，判断哪一步限制薄膜生长。</p>
+          <span class="mod-go" aria-hidden="true">↗</span>
         </a>
 
         <a class="mod-card" href="lab.html?m=rd">
           <span class="mod-idx">03</span>
           <h4>反应-扩散耦合</h4>
-          <p class="mod-sub">二维浓度场与前沿推进</p>
-          <p class="mod-desc">浓度场耗尽之前，反应前沿能推进多深，由扩散还是反应决定。</p>
-          <span class="mod-go">进入模块 <i>→</i></span>
+          <p class="mod-desc">观察浓度在二维空间的分布，以及反应前沿的推进。</p>
+          <span class="mod-go" aria-hidden="true">↗</span>
         </a>
 
         <a class="mod-card" href="lab.html?m=kiln">
           <span class="mod-idx">04</span>
           <h4>马弗炉烧成</h4>
-          <p class="mod-sub">箱式炉装炉位置与炉膛热场</p>
-          <p class="mod-desc">同一个设定温度，贴加热壁和靠炉门，样品的温度历程差出几十 K。</p>
-          <span class="mod-go">进入模块 <i>→</i></span>
+          <p class="mod-desc">调整装炉位置，比较炉膛内不同位置的温度历程。</p>
+          <span class="mod-go" aria-hidden="true">↗</span>
         </a>
 
         <a class="mod-card" href="lab.html?m=heat">
           <span class="mod-idx">05</span>
           <h4>热处理</h4>
-          <p class="mod-sub">Fe-C 合金的加热、保温与可控冷却</p>
-          <p class="mod-desc">正火、淬火、回火、退火四种工艺，冷却速度一变组织全变，磁性能随之改变。</p>
-          <span class="mod-go">进入模块 <i>→</i></span>
+          <p class="mod-desc">比较正火、淬火、回火和退火对 Fe-C 合金组织的影响。</p>
+          <span class="mod-go" aria-hidden="true">↗</span>
         </a>
       </div>
     </section>
@@ -134,30 +128,26 @@
     <!-- ======================= 能力 ======================= -->
     <section class="sec">
       <div class="sec-head">
-        <h3>平台能力</h3>
-        <p>不是把结果算好摆着看，而是让过程本身可观察、可干预。</p>
+        <h3>实验工具</h3>
+        <p>从观察过程到整理报告，在同一个实验台完成。</p>
       </div>
 
       <div class="cap-grid">
         <div class="cap">
-          <span class="cap-ico">◷</span>
           <h4>实时演算</h4>
-          <p>按现实时间推进求解，可暂停、可调「现实 1 秒对应多少模拟分钟」，演算途中改参数从当前位置继续。</p>
+          <p>逐步求解，可暂停、变速和在途中调整参数。</p>
         </div>
         <div class="cap">
-          <span class="cap-ico">◫</span>
           <h4>多组对比</h4>
-          <p>同一坐标系里叠过程曲线，关键指标逐项对照，不同配方与工艺的差别一眼看出来。</p>
+          <p>叠加过程曲线，逐项比较不同工艺的关键指标。</p>
         </div>
         <div class="cap">
-          <span class="cap-ico">✧</span>
           <h4>AI 实验助手</h4>
-          <p>本地规则模型做寻优、敏感性与工艺诊断；接入外部大模型后，可结合当前实验数据对话解读。</p>
+          <p>进行工艺寻优、敏感性分析和结果解读。</p>
         </div>
         <div class="cap">
-          <span class="cap-ico">▤</span>
           <h4>术语与报告</h4>
-          <p>93 条专业术语按模块归类，随时查；实验记录一键导出 CSV 或生成完整报告。</p>
+          <p>查阅术语，导出 CSV 或生成实验报告。</p>
         </div>
       </div>
     </section>
@@ -191,7 +181,7 @@
       // 回到上次用过的模块
       try {
         var last = localStorage.getItem('hdu-lab-last-module');
-        if (last && /^(solid|cvd|rd|kiln)$/.test(last)) {
+        if (last && /^(solid|cvd|rd|kiln|heat)$/.test(last)) {
           var entry = document.querySelector('.hero-actions a.hero-btn');
           if (entry) entry.href = 'lab.html?m=' + last;
           var top = document.querySelector('.top-right a.btn');

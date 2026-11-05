@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>实验台 · AI+ 虚拟仿真材料实验平台</title>
 <meta name="description" content="虚拟仿真材料实验台：调节温度、压力、浓度与装炉位置，实时逐步求解反应过程，支持多组对比、敏感性分析与实验报告生成。">
 <link rel="icon" type="image/png" href="assets/favicon.png">
-<meta name="theme-color" content="#0b1524">
+<meta name="theme-color" content="#f5f7fa">
 <script>
   /* 首屏即应用主题，避免刷新时闪白/闪黑 */
   (function () {
@@ -44,52 +44,58 @@
       <a class="btn ghost home-back" href="index.html" title="返回首页">
         <span class="ico">‹</span> 首页
       </a>
-      <div class="seg" id="moduleSwitch"></div>
       <button class="btn ghost" id="btnGlossary">
         <span class="ico">▤</span> 术语库
       </button>
       <button class="btn ghost" id="btnGuide">
         <span class="ico">◈</span> 实验指导
       </button>
-      <button class="theme-switch" id="btnTheme" role="switch" aria-checked="true" title="切换亮色 / 深色模式" aria-label="切换亮色 / 深色模式">
+      <button class="theme-switch" id="btnTheme" role="switch" aria-checked="false" title="切换亮色 / 深色模式" aria-label="切换亮色 / 深色模式">
         <i class="ts-ico sun">☀</i><i class="ts-ico moon">☾</i><span class="ts-knob"></span>
       </button>
-      <div class="status-pill"><i></i><span>计算引擎就绪</span></div>
     </div>
   </header>
+
+  <nav class="lab-nav" aria-label="实验模块">
+    <span class="lab-nav-label" aria-hidden="true">实验模块</span>
+    <div class="seg" id="moduleSwitch"></div>
+  </nav>
 
   <main class="layout">
 
     <!-- ======================= 左：实验条件 ======================= -->
     <aside class="panel panel-left">
-      <div class="panel-head">
-        <h2>实验条件</h2>
-        <span class="tag" id="moduleTag">固相反应</span>
-      </div>
-
-      <div class="sub-block">
-        <label class="field-label">材料体系</label>
-        <div class="select-wrap">
-          <select id="materialSelect"></select>
+      <div class="parameter-scroll">
+        <div class="panel-head">
+          <h2>实验条件</h2>
+          <span class="tag" id="moduleTag">固相反应</span>
         </div>
-        <div class="material-note" id="materialNote"></div>
+
+        <div class="sub-block">
+          <label class="field-label" for="materialSelect">材料体系</label>
+          <div class="select-wrap">
+            <select id="materialSelect"></select>
+          </div>
+          <div class="material-note" id="materialNote"></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="sliders" id="paramList"></div>
+
+        <div class="divider"></div>
+
+        <div class="sub-block">
+          <label class="field-label">工艺预设</label>
+          <div class="preset-grid" id="presetList"></div>
+        </div>
       </div>
-
-      <div class="divider"></div>
-
-      <div class="sliders" id="paramList"></div>
-
-      <div class="divider"></div>
-
-      <div class="sub-block">
-        <label class="field-label">工艺预设</label>
-        <div class="preset-grid" id="presetList"></div>
+      <div class="run-actions">
+        <button class="btn primary run-btn" id="btnRun">
+          <span class="run-ico">▶</span> 运行仿真
+        </button>
+        <div class="run-hint">调整参数后点击运行，结果将自动写入数据记录</div>
       </div>
-
-      <button class="btn primary run-btn" id="btnRun">
-        <span class="run-ico">▶</span> 运行仿真
-      </button>
-      <div class="run-hint">调整参数后点击运行，结果将自动写入数据记录</div>
     </aside>
 
     <!-- ======================= 中：主工作区 ======================= -->
@@ -126,7 +132,7 @@
             <div class="viz-bar">
               <button class="btn icon" id="btnPlay" title="播放/暂停">▶</button>
               <button class="btn icon" id="btnRewind" title="回到起点">↺</button>
-              <input type="range" id="timeline" min="0" max="1000" value="1000">
+              <input type="range" id="timeline" min="0" max="1000" value="1000" aria-label="仿真时间轴">
               <span class="time-read" id="timeLabel">t = 0 min</span>
             </div>
             <div class="live-bar" id="liveBar">
