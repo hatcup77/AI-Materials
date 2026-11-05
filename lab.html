@@ -6,7 +6,7 @@
 <title>实验台 · AI+ 虚拟仿真材料实验平台</title>
 <meta name="description" content="虚拟仿真材料实验台：调节温度、压力、浓度与装炉位置，实时逐步求解反应过程，支持多组对比、敏感性分析与实验报告生成。">
 <link rel="icon" type="image/png" href="assets/favicon.png">
-<meta name="theme-color" content="#f5f7fa">
+<meta name="theme-color" content="#f3f9f6">
 <script>
   /* 首屏即应用主题，避免刷新时闪白/闪黑 */
   (function () {
@@ -17,47 +17,35 @@
   })();
 </script>
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/lab.css">
 </head>
-<body>
+<body class="lab">
 <div class="app">
 
-  <!-- 窄屏提示：<1180px 时自动出现 -->
-  <div class="narrow-hint" id="narrowHint" hidden>
-    <b>窄屏模式</b>
-    <span>当前窗口宽度不足 1180px，实验台已改为纵向堆叠显示，图表与参数建议在更宽的屏幕（如 1366×768 以上）上使用。</span>
-    <button class="nh-close" id="btnNarrowClose" type="button">知道了</button>
-  </div>
-
-  <!-- ======================= 顶部品牌栏 ======================= -->
-  <header class="topbar">
-    <div class="brand">
-      <div class="brand-mark">
-        <img class="bm-light" src="assets/hdu-emblem-light.png" alt="杭州电子科技大学校徽">
+  <header class="topbar lab-topbar">
+    <a class="brand brand-link" href="index.html">
+      <span class="brand-mark" aria-hidden="true">
+        <img class="bm-light" src="assets/hdu-emblem-light.png" alt="">
         <img class="bm-blue" src="assets/hdu-emblem-blue.png" alt="">
-      </div>
-      <div class="brand-text">
-        <h1>AI+ 虚拟仿真材料实验平台</h1>
-        <p>杭州电子科技大学 · 材料科学与工程虚拟仿真实验教学中心</p>
-      </div>
-    </div>
+      </span>
+      <span class="brand-text">
+        <span class="brand-name">材料仿真实验室</span>
+        <span class="brand-org">杭州电子科技大学</span>
+      </span>
+    </a>
     <div class="top-right">
-      <a class="btn ghost home-back" href="index.html" title="返回首页">
-        <span class="ico">‹</span> 首页
-      </a>
-      <button class="btn ghost" id="btnGlossary">
-        <span class="ico">▤</span> 术语库
-      </button>
-      <button class="btn ghost" id="btnGuide">
-        <span class="ico">◈</span> 实验指导
-      </button>
-      <button class="theme-switch" id="btnTheme" role="switch" aria-checked="false" title="切换亮色 / 深色模式" aria-label="切换亮色 / 深色模式">
-        <i class="ts-ico sun">☀</i><i class="ts-ico moon">☾</i><span class="ts-knob"></span>
+      <a class="btn ghost home-back" href="index.html"><span aria-hidden="true">←</span> 首页</a>
+      <button class="btn ghost" id="btnGlossary" type="button">术语库</button>
+      <button class="btn ghost" id="btnGuide" type="button">实验指导</button>
+      <button class="btn assistant-trigger" id="btnAiExpand" type="button" aria-controls="aiPanel" aria-expanded="false"><span aria-hidden="true">✧</span> AI 助手</button>
+      <button class="theme-switch" id="btnTheme" type="button" role="switch" aria-checked="false" title="切换亮色 / 深色模式" aria-label="深色模式">
+        <i class="ts-ico sun" aria-hidden="true">☀</i><i class="ts-ico moon" aria-hidden="true">☾</i><span class="ts-knob"></span>
       </button>
     </div>
   </header>
 
   <nav class="lab-nav" aria-label="实验模块">
-    <span class="lab-nav-label" aria-hidden="true">实验模块</span>
+    <span class="lab-nav-label">实验模块</span>
     <div class="seg" id="moduleSwitch"></div>
   </nav>
 
@@ -65,12 +53,14 @@
 
     <!-- ======================= 左：实验条件 ======================= -->
     <aside class="panel panel-left">
-      <div class="parameter-scroll">
-        <div class="panel-head">
+      <div class="panel-head params-head">
+        <div>
+          <p class="stage-kicker">工艺设置</p>
           <h2>实验条件</h2>
-          <span class="tag" id="moduleTag">固相反应</span>
         </div>
-
+        <button class="btn ghost sm" type="button" id="btnParams" aria-expanded="false" aria-controls="parameterScroll">展开参数</button>
+      </div>
+      <div class="parameter-scroll" id="parameterScroll">
         <div class="sub-block">
           <label class="field-label" for="materialSelect">材料体系</label>
           <div class="select-wrap">
@@ -96,22 +86,28 @@
           <span class="run-ico" aria-hidden="true">▶</span>
           <span class="run-label">运行仿真</span>
         </button>
-        <div class="run-hint">调整参数后点击运行，结果将自动写入数据记录</div>
+        <div class="run-hint">完成后自动保存到「数据与报告」</div>
       </div>
     </aside>
 
     <!-- ======================= 中：主工作区 ======================= -->
     <section class="stage">
-      <div class="tabs" id="mainTabs">
-        <button class="tab active" data-tab="bench">虚拟实验台</button>
-        <button class="tab" data-tab="response">边界条件响应</button>
-        <button class="tab" data-tab="data">数据与报告</button>
-        <button class="tab" data-tab="compare">多组对比分析</button>
-        <div class="tab-info" id="tabInfo"></div>
+      <div class="stage-head">
+        <div>
+          <p class="stage-kicker">仿真实验</p>
+          <h1 id="moduleTitle">固相反应合成</h1>
+        </div>
+        <p class="tab-info" id="tabInfo" role="status"></p>
+      </div>
+      <div class="tabs" id="mainTabs" role="tablist" aria-label="实验结果">
+        <button class="tab active" id="tabBench" type="button" role="tab" aria-selected="true" aria-controls="viewBench" data-tab="bench">仿真与曲线</button>
+        <button class="tab" id="tabResponse" type="button" role="tab" aria-selected="false" aria-controls="viewResponse" tabindex="-1" data-tab="response">参数影响</button>
+        <button class="tab" id="tabData" type="button" role="tab" aria-selected="false" aria-controls="viewData" tabindex="-1" data-tab="data">数据与报告</button>
+        <button class="tab" id="tabCompare" type="button" role="tab" aria-selected="false" aria-controls="viewCompare" tabindex="-1" data-tab="compare">多组对比</button>
       </div>
 
       <!-- ---------- 实验台 ---------- -->
-      <div class="tab-body active" data-body="bench">
+      <div class="tab-body active" id="viewBench" role="tabpanel" aria-labelledby="tabBench" tabindex="0" data-body="bench">
         <div class="kpi-row" id="kpiRow"></div>
 
         <div class="viz-grid">
@@ -184,7 +180,7 @@
       </div>
 
       <!-- ---------- 响应曲线 ---------- -->
-      <div class="tab-body" data-body="response">
+      <div class="tab-body" id="viewResponse" role="tabpanel" aria-labelledby="tabResponse" tabindex="0" data-body="response">
         <div class="card">
           <div class="card-head">
             <div>
@@ -200,7 +196,7 @@
       </div>
 
       <!-- ---------- 数据与报告 ---------- -->
-      <div class="tab-body" data-body="data">
+      <div class="tab-body" id="viewData" role="tabpanel" aria-labelledby="tabData" tabindex="0" data-body="data">
         <div class="toolbar">
           <div class="tool-left">
             <span class="count-badge"><b id="dataCount">0</b> 条仿真记录</span>
@@ -220,7 +216,7 @@
       </div>
 
       <!-- ---------- 对比分析 ---------- -->
-      <div class="tab-body" data-body="compare">
+      <div class="tab-body" id="viewCompare" role="tabpanel" aria-labelledby="tabCompare" tabindex="0" data-body="compare">
         <div class="toolbar">
           <div class="tool-left">
             <span class="count-badge"><b id="cmpCount">0</b> 组实验参与对比</span>
@@ -261,24 +257,19 @@
       </div>
     </section>
 
-    <!-- ======================= 右：AI 助手 ======================= -->
-    <aside class="panel panel-right" id="aiPanel">
+  </main>
+</div>
 
-      <!-- 收起态：竖向把手 -->
-      <button class="ai-rail" id="btnAiExpand" type="button" title="展开 AI 实验助手" aria-label="展开 AI 实验助手" aria-expanded="false">
-        <span class="ai-rail-chev">‹</span>
-        <span class="ai-rail-badge">AI</span>
-        <span class="ai-rail-text">实验助手</span>
-      </button>
-
-      <!-- 展开态：完整内容 -->
+<div class="assistant-layer" hidden>
+  <div class="assistant-scrim" id="aiBackdrop" aria-hidden="true"></div>
+  <aside class="panel panel-right" id="aiPanel" role="dialog" aria-modal="true" aria-labelledby="assistantTitle" inert>
       <div class="ai-body" id="aiBody">
       <div class="panel-head">
-        <h2>AI 实验助手</h2>
+        <h2 id="assistantTitle">AI 实验助手</h2>
         <div class="panel-head-right">
           <span class="tag accent" id="aiTag">本地模型</span>
           <button class="ai-collapse" id="btnAiConfig" type="button" title="接入外部大模型" aria-label="接入外部大模型">⚙</button>
-          <button class="ai-collapse" id="btnAiCollapse" type="button" title="收起面板" aria-label="收起 AI 实验助手" aria-expanded="true">›</button>
+          <button class="ai-collapse" id="btnAiCollapse" type="button" title="关闭面板" aria-label="关闭 AI 实验助手">✕</button>
         </div>
       </div>
 
@@ -365,8 +356,7 @@
         <div class="ai-status" id="aiChatStatus"></div>
       </div>
       </div>
-    </aside>
-  </main>
+  </aside>
 </div>
 
 <!-- ======================= 实验指导弹窗 ======================= -->
@@ -415,11 +405,11 @@
 </div>
 
 <!-- ======================= 接入外部大模型 ======================= -->
-<div class="modal" id="aiConfigModal">
+<div class="modal" id="aiConfigModal" role="dialog" aria-modal="true" aria-labelledby="aiConfigTitle">
   <div class="modal-card ai-cfg-card">
     <div class="modal-head">
-      <h2>接入外部大模型</h2>
-      <button class="modal-close" data-close="aiConfigModal">✕</button>
+      <h2 id="aiConfigTitle">接入外部大模型</h2>
+      <button class="modal-close" data-close="aiConfigModal" aria-label="关闭外部模型配置">✕</button>
     </div>
     <div class="modal-body ai-cfg-body">
       <p class="ai-cfg-lead">

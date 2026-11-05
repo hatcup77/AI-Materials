@@ -521,20 +521,22 @@
       var dim = lt ? 'rgba(38,64,96,0.62)' : 'rgba(170,195,225,0.62)';
       var line = lt ? 'rgba(30,70,120,0.18)' : 'rgba(140,180,235,0.18)';
 
-      /* ---------- 布局：左截面金相，右上 CCT，右下温度曲线 + 炉膛示意 ---------- */
+      /* 宽屏左右排布；窄屏将 CCT 图放到整行，保留温度和炉膛示意。 */
       var gap = 8;
-      var secW = Math.round(W * 0.46), secH = H - 2 * gap;
-      var cctX = gap + secW + gap;
+      var stacked = W < 620 && H >= 460;
+      var secW = stacked ? W - 2 * gap : Math.round(W * 0.46);
+      var secH = stacked ? Math.round(H * 0.34) : H - 2 * gap;
+      var cctX = stacked ? gap : gap + secW + gap;
+      var cctY = stacked ? gap + secH + gap : gap;
       var cctW = W - cctX - gap;
-      var cctH = Math.round((H - 3 * gap) * 0.52);
-      var botY = gap + cctH + gap;
+      var cctH = Math.round((H - cctY - 2 * gap) * (stacked ? 0.62 : 0.52));
+      var botY = cctY + cctH + gap;
       var botH = H - botY - gap;
       var curveW = Math.round(cctW * 0.58);
       var furnX = cctX + curveW + gap, furnW = cctW - curveW - gap;
-
       /* ---------- 左侧：截面金相图 ---------- */
       rrect(c2, gap, gap, secW, secH, 7);
-      c2.fillStyle = lt ? '#f2f5f9' : '#0a1220';
+      c2.fillStyle = lt ? '#edf6f2' : '#13241d';
       c2.fill();
       c2.save();
       rrect(c2, gap, gap, secW, secH, 7);
@@ -572,14 +574,25 @@
       c2.stroke();
 
       /* ---------- 右上：CCT 图 + 冷却曲线 ---------- */
-      rrect(c2, cctX, gap, cctW, cctH, 7);
-      c2.fillStyle = lt ? '#f7f9fc' : '#080e18';
+      rrect(c2, cctX, cctY, cctW, cctH, 7);
+      c2.fillStyle = lt ? '#f5faf7' : '#101e19';
       c2.fill();
       c2.strokeStyle = line; c2.stroke();
 
-      var padL = 30, padR = 8, padT = 14, padB = 18;
+      var padL = 30, padR = 8, padT = 25, padB = 27;
       var px0 = cctX + padL, px1 = cctX + cctW - padR;
-      var py0 = gap + padT, py1 = gap + cctH - padB;
+      var py0 = cctY + padT, py1 = cctY + cctH - padB;
+      c2.fillStyle = lt ? '#315d51' : '#a5c3b5';
+      c2.font = '11px "Microsoft YaHei", sans-serif';
+      c2.textAlign = 'left';
+      c2.fillText('CCT · 连续冷却', cctX + 8, cctY + 15);
+      if (cctW >= 200) {
+        c2.textAlign = 'right';
+        c2.fillStyle = lt ? '#a6500b' : '#ffb347';
+        c2.fillText('表面', px1 - 36, cctY + 15);
+        c2.fillStyle = lt ? '#ac3e74' : '#f093be';
+        c2.fillText('心部', px1, cctY + 15);
+      }
       var tMaxLog = 4.6, Ttop = 900, Tbot = 100;
       function lxt(ts) { return px0 + (px1 - px0) * clamp(Math.log10(Math.max(0.1, ts)) / tMaxLog, 0, 1); }
       function tyv(T) { return py1 - (py1 - py0) * clamp((T - Tbot) / (Ttop - Tbot), 0, 1); }
@@ -646,7 +659,7 @@
       c2.fillText('900℃', px0 - 3, py0 + 4);
       c2.fillText('100℃', px0 - 3, py1);
       c2.textAlign = 'left';
-      c2.fillText('时间 (s)', px1 - 42, py1 + 11);
+      c2.fillText('时间 (s)', px1 - 36, py1 + 23);
 
       // 冷却曲线：表面与心部（进入冷却段后才出现）
       if (inCool && coolLen > 0) {
@@ -670,7 +683,7 @@
 
       /* ---------- 右下左：温度-时间曲线（含炉温程序线） ---------- */
       rrect(c2, cctX, botY, curveW, botH, 7);
-      c2.fillStyle = lt ? '#f7f9fc' : '#080e18';
+      c2.fillStyle = lt ? '#f5faf7' : '#101e19';
       c2.fill();
       c2.strokeStyle = line; c2.stroke();
       var qL = 26, qR = 6, qT = 12, qB = 16;
@@ -728,7 +741,7 @@
 
       /* ---------- 右下右：炉膛温区示意 ---------- */
       rrect(c2, furnX, botY, furnW, botH, 7);
-      c2.fillStyle = lt ? '#f7f9fc' : '#080e18';
+      c2.fillStyle = lt ? '#f5faf7' : '#101e19';
       c2.fill();
       c2.strokeStyle = line; c2.stroke();
       var fzY = botY + 14, fzH = botH - 42;
@@ -745,7 +758,7 @@
         c2.strokeStyle = line; c2.stroke();
         c2.fillStyle = dim; c2.font = '9px "Microsoft YaHei", sans-serif';
         c2.textAlign = 'center';
-        c2.fillText(ZONES[zi].name, zx + (zw - 3) / 2, fzY + 12);
+        c2.fillText(zw < 33 ? ZONES[zi].name.slice(0, 2) : ZONES[zi].name, zx + (zw - 3) / 2, fzY + 12);
         c2.fillText((ZONES[zi].dT >= 0 ? '+' : '') + ZONES[zi].dT + ' ℃', zx + (zw - 3) / 2, fzY + fzH - 5);
       }
       var wjx = furnX + 8 + zoneIdx * zw + (zw - 3) / 2;

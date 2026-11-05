@@ -2536,6 +2536,7 @@ textarea:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
@@ -2589,3 +2590,59 @@ html.theme-vt .theme-switch .ts-knob { transition: none; }
   opacity: 0;
   transition: clip-path 620ms cubic-bezier(0.32, 0.72, 0.24, 1), opacity 260ms ease 120ms;
 }
+
+/* Interface accents and type shared by the homepage and workbench. */
+:root {
+  --mono: "Cascadia Mono", Consolas, monospace;
+  --ui-shadow: 0 8px 24px rgba(4, 18, 13, .25);
+}
+html[data-theme="light"] {
+  --bg: #f3f9f6;
+  --bg2: #e6f2eb;
+  --panel2: #f3f9f6;
+  --txt: #172e27;
+  --txt2: #36554a;
+  --txt3: #48675b;
+  --line: rgba(20, 86, 66, .15);
+  --line2: rgba(20, 86, 66, .28);
+  --line-soft: rgba(20, 86, 66, .10);
+  --cyan: #0a6d59;
+  --blue: var(--cyan);
+  --accent-bg: var(--cyan);
+  --accent-soft: #dff1e9;
+  --canvas-bg: #edf6f2;
+  --th-bg: #e5f2ed;
+  --empty-bg: #f3f9f6;
+  --modal-bg: linear-gradient(170deg, #ffffff, #eff8f4);
+  --ui-shadow: 0 8px 24px rgba(19, 86, 65, .09);
+}
+html[data-theme="dark"] {
+  --bg: #101d19;
+  --bg2: #0b1612;
+  --panel: #192b25;
+  --panel2: #223830;
+  --topbar-bg: #162620;
+  --txt: #e8f7ef;
+  --txt2: #c0ddd0;
+  --txt3: #a5c3b5;
+  --line: rgba(146, 209, 182, .17);
+  --line2: rgba(146, 209, 182, .29);
+  --line-soft: rgba(146, 209, 182, .10);
+  --cyan: #79dec0;
+  --blue: var(--cyan);
+  --accent-bg: var(--cyan);
+  --accent-ink: #102820;
+  --accent-soft: #23483c;
+  --canvas-bg: #0e1c17;
+  --th-bg: #223a30;
+  --opt-bg: #162620;
+  --empty-bg: #13241d;
+  --modal-bg: linear-gradient(170deg, #1b3027, #13231d);
+  --toast-bg: #1b3027;
+}
+.brand-link { color: var(--txt); gap: 9px; }
+.brand-link .brand-mark { width: 37px; height: 37px; }
+.brand-name, .brand-org { display: block; }
+.brand-name { font-size: 15px; font-weight: 700; line-height: 1.35; }
+.brand-org { margin-top: 2px; color: var(--txt3); font-size: 11px; }
+.brand-link:focus-visible, .mod-card:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
