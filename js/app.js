@@ -7,6 +7,7 @@
   var Sim = window.Sim;
   var Charts = window.Charts;
   var PALETTE = Charts.PALETTE;
+  var MIN_COMPARE = 2, MAX_COMPARE = 5;
 
   function $(s, r) { return (r || document).querySelector(s); }
 
@@ -23,7 +24,8 @@
     current: null,
     runs: [],               // 已记录实验
     compare: [],            // 当前模块的 run id 列表
-    compareByModule: {},    // 各模块各自的对比选择，切回不丢
+    compareByModule: {},    // 各模块已确认的对比
+    compareDraftByModule: {}, // 「数据与报告」中尚未确认的勾选
     paramsByModule: {},     // 各模块各自调好的参数，切回不重置
     seq: { solid: 0, cvd: 0, rd: 0, kiln: 0 },
     frame: 1,
@@ -1453,38 +1455,30 @@
   }
 
   /* ----------------------------- 对比分析 ----------------------------- */
+  function showTab(name, focus) {
+    var target = $('#mainTabs [data-tab="' + name + '"]');
+    $$('#mainTabs .tab').forEach(function (t) { t.classList.toggle('active', t === target); });
+    $$('.tab-body').forEach(function (b) { b.classList.toggle('active', b.dataset.body === name); });
+    if (name === 'response') renderSweep();
+    if (name === 'compare') renderCompare();
+    if (name === 'data') renderData();
+    if (focus) {
+      $('.tab-body.active').scrollTop = 0;
+      target.focus();
+    }
+    setTimeout(function () { drawViz(); renderProcessChart(); }, 30);
+  }
+
   function bindTabs() {
     $$('#mainTabs .tab').forEach(function (t) {
-      t.addEventListener('click', function () {
-        $$('#mainTabs .tab').forEach(function (x) { x.classList.remove('active'); });
-        t.classList.add('active');
-        $$('.tab-body').forEach(function (b) { b.classList.toggle('active', b.dataset.body === t.dataset.tab); });
-        if (t.dataset.tab === 'response') renderSweep();
-        if (t.dataset.tab === 'compare') renderCompare();
-        if (t.dataset.tab === 'data') renderData();
-        setTimeout(function () { drawViz(); renderProcessChart(); }, 30);
-      });
+      t.addEventListener('click', function () { showTab(t.dataset.tab); });
     });
   }
 
   function bindCompare() {
-    $('#btnAddCompare').addEventListener('click', function () {
-      var run = state.current;
-      if (!run) return;
-      // 实时快照的 id 恒为 LIVE-<模块>，不在 state.runs 里，
-      // 直接推进对比列表会得到一条永远解析不到的记录
-      var recorded = state.runs.some(function (r) { return r.id === run.id; });
-      if (!recorded) {
-        toast(state.live.on ? '实时演算请先点「记入数据表」，再加入对比' : '该结果尚未记录', 'warn');
-        return;
-      }
-      if (state.compare.indexOf(run.id) >= 0) { toast('该结果已在对比列表中', 'warn'); return; }
-      if (state.compare.length >= 5) { toast('最多同时对比 5 组实验', 'warn'); return; }
-      setCompare(state.compare.concat([run.id]));
-      renderCompare();
-      toast('已加入对比：' + runLabel(run));
-    });
+    $('#btnPickCompare').addEventListener('click', function () { showTab('data', true); });
     $('#btnClearCompare').addEventListener('click', function () {
+      state.compareDraftByModule[state.moduleId] = [];
       setCompare([]);
       renderCompare();
       toast('对比列表已清空');
@@ -1504,6 +1498,15 @@
     state.compare = ids;
     state.compareByModule[state.moduleId] = ids.slice();
     persistRuns();
+  }
+
+  function compareDraft() {
+    return state.compareDraftByModule[state.moduleId] || state.compare;
+  }
+
+  function pruneCompare(keep) {
+    state.compareDraftByModule[state.moduleId] = compareDraft().filter(keep);
+    setCompare(state.compare.filter(keep));
   }
 
   function compareRuns() {
@@ -1531,7 +1534,7 @@
     $('#cmpCount').textContent = list.length;
     $('#cmpHint').textContent = list.length
       ? '对比当前模块（' + Sim.getModule(state.moduleId).name + '）的 ' + list.length + ' 组工况'
-      : '运行仿真后点击「加入当前结果」开始对比';
+      : '在「数据与报告」中勾选记录，再点击「开始对比」';
 
     var emptyA = $('#cmpEmptyA'), emptyB = $('#cmpEmptyB');
     if (!list.length) {
@@ -1666,7 +1669,7 @@
     $('#compareTableWrap').innerHTML = html;
     $$('#compareTableWrap [data-del]').forEach(function (b) {
       b.addEventListener('click', function () {
-        setCompare(state.compare.filter(function (id) { return id !== b.dataset.del; }));
+        pruneCompare(function (id) { return id !== b.dataset.del; });
         renderCompare();
       });
     });
@@ -1674,6 +1677,12 @@
 
   /* ------------------------------ 数据表 ------------------------------ */
   function bindData() {
+    $('#btnStartCompare').addEventListener('click', function () {
+      var ids = compareDraft();
+      if (ids.length < MIN_COMPARE || ids.length > MAX_COMPARE) return;
+      setCompare(ids.slice());
+      showTab('compare', true);
+    });
     $('#btnExport').addEventListener('click', exportCsv);
     $('#btnReport').addEventListener('click', openReport);
     $('#btnPrint').addEventListener('click', function () { window.print(); });
@@ -1684,11 +1693,20 @@
       var removed = {};
       list.forEach(function (r) { removed[r.id] = true; });
       state.runs = state.runs.filter(function (r) { return !removed[r.id]; });
-      setCompare(state.compare.filter(function (id) { return !removed[id]; }));
-      persistRuns();
+      pruneCompare(function (id) { return !removed[id]; });
       renderData();
       renderCompare();
       toast('已清空本模块记录');
+    });
+  }
+
+  function syncCompareDraft() {
+    var ids = compareDraft();
+    $('#dataCompareCount').textContent = ids.length;
+    $('#btnStartCompare').disabled = ids.length < MIN_COMPARE || ids.length > MAX_COMPARE;
+    $$('#dataTableWrap [data-pick-compare]').forEach(function (input) {
+      input.checked = ids.indexOf(input.dataset.pickCompare) >= 0;
+      input.closest('tr').classList.toggle('compare-selected', input.checked);
     });
   }
 
@@ -1699,6 +1717,7 @@
     if (!list.length) {
       wrap.innerHTML = '<div class="empty-state"><span class="es-ico">▤</span>' +
         '当前模块尚无实验记录<br>在「虚拟实验台」点击「运行仿真」后自动记录</div>';
+      syncCompareDraft();
       return;
     }
     var M = Sim.getModule(state.moduleId);
@@ -1720,27 +1739,31 @@
       html += '<td class="col-note"><input class="row-note" data-note="' + r.id + '" value="' + escHtml(r.note || '') +
         '" placeholder="写一句结论…" aria-label="第 ' + (r.seq || '') + ' 组备注"></td>';
       html += '<td class="col-time cell-dim">' + new Date(r.ts).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) + '</td>';
-      html += '<td class="col-actions"><button class="link-btn" data-add="' + r.id + '">对比</button>' +
+      html += '<td class="col-actions"><label class="compare-choice"><input type="checkbox" data-pick-compare="' + r.id +
+        '" aria-label="选择第 ' + (r.seq || '') + ' 组参与对比"><span>对比</span></label>' +
         '<button class="link-btn danger" data-remove="' + r.id + '">删除</button></td></tr>';
     });
     html += '</tbody></table>';
     wrap.innerHTML = html;
-    $$('[data-add]', wrap).forEach(function (b) {
-      b.addEventListener('click', function () {
-        var id = b.dataset.add;
-        if (state.compare.indexOf(id) >= 0) { toast('已在对比列表中', 'warn'); return; }
-        if (state.compare.length >= 5) { toast('最多同时对比 5 组实验', 'warn'); return; }
-        setCompare(state.compare.concat([id]));
-        renderCompare();
-        toast('已加入对比');
+    $$('[data-pick-compare]', wrap).forEach(function (input) {
+      input.addEventListener('change', function () {
+        var id = input.dataset.pickCompare;
+        var ids = compareDraft();
+        if (input.checked && ids.length >= MAX_COMPARE) {
+          toast('最多同时对比 ' + MAX_COMPARE + ' 组实验', 'warn');
+        } else {
+          state.compareDraftByModule[state.moduleId] = input.checked
+            ? ids.concat([id]) : ids.filter(function (picked) { return picked !== id; });
+        }
+        syncCompareDraft();
       });
     });
+    syncCompareDraft();
     $$('[data-remove]', wrap).forEach(function (b) {
       b.addEventListener('click', function () {
         var id = b.dataset.remove;
         state.runs = state.runs.filter(function (r) { return r.id !== id; });
-        setCompare(state.compare.filter(function (cid) { return cid !== id; }));
-        persistRuns();
+        pruneCompare(function (cid) { return cid !== id; });
         renderData();
         renderCompare();
         toast('已删除该条记录');
