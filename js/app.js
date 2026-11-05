@@ -2431,7 +2431,9 @@
       // 短符号（k、α、ΔT）放标题当徽标，长公式单独成行
       var badge = abbr || (sym.length <= 4 ? sym : '');
       var formula = sym && sym !== badge ? sym : '';
-      html += '<article class="gl-item" data-id="' + t.id + '" tabindex="0" role="button" aria-expanded="false">' +
+      html += '<article class="gl-item" data-id="' + t.id + '"' +
+        (t.fig ? ' data-fig="' + t.fig + '"' : '') +
+        ' tabindex="0" role="button" aria-expanded="false">' +
         '<div class="gl-item-head">' +
           '<div class="gl-item-title">' +
             '<h4><span class="gl-zh">' + glMark(t.zh, q) + '</span>' + (badge ? '<span class="gl-sym">' + glEsc(badge) + '</span>' : '') + '</h4>' +
@@ -2460,6 +2462,20 @@
     });
     $('#glBody').innerHTML = html;
     $('#glBody').scrollTop = 0;
+  }
+
+  /* 配图按需挂载：折叠时不生成 SVG，展开一次后即保留在 DOM 里 */
+  function mountFig(item) {
+    var key = item.getAttribute('data-fig');
+    if (!key || !window.GlossaryFigs || !window.GlossaryFigs[key]) return;
+    var detail = item.querySelector('.gl-detail');
+    if (!detail || detail.querySelector('.gl-fig')) return;
+    var fg = window.GlossaryFigs[key]();
+    if (!fg) return;
+    var fig = document.createElement('figure');
+    fig.className = 'gl-fig';
+    fig.innerHTML = fg.svg + '<figcaption>' + fg.cap + '</figcaption>';
+    detail.insertBefore(fig, detail.firstChild);
   }
 
   function openGlossary() {
@@ -2557,7 +2573,7 @@
           $('#glSearch').parentNode.classList.add('has-q');
           renderGlossary();
           var card = $('#glBody .gl-item');
-          if (card) card.classList.add('open');
+          if (card) { card.classList.add('open'); mountFig(card); }
         }
         return;
       }
@@ -2565,6 +2581,7 @@
       if (!item) return;
       var open = item.classList.toggle('open');
       item.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) mountFig(item);
     });
     $('#glBody').addEventListener('keydown', function (e) {
       if (e.key !== 'Enter' && e.key !== ' ') return;

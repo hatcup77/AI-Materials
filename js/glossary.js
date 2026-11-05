@@ -18,14 +18,14 @@
   var TERMS = [
     /* ------------------------------ 通用 ------------------------------ */
     {
-      id: 'act-energy', cat: 'core', zh: '活化能', en: 'Activation energy', abbr: '', sym: 'Eₐ', unit: 'kJ/mol',
+      id: 'act-energy', fig: 'act-energy', cat: 'core', zh: '活化能', en: 'Activation energy', abbr: '', sym: 'Eₐ', unit: 'kJ/mol',
       def: '反应速率常数对温度敏感程度的度量，出现在 Arrhenius 式的指数项中。物理含义是反应或扩散步骤必须越过的能量势垒。',
       why: '它决定「升温能换来多大加速」：Eₐ 越大，同样升 50 K 速率增幅越显著。氧化物固相反应的表观 Eₐ 常在 100~400 kJ/mol。',
       pit: '不要把表观活化能当成某个基元步骤的能垒。固相反应往往由扩散、成核、界面反应串联，测到的是表观值，还会随温区漂移。',
       mod: 'solid', param: 'T', rel: ['arrhenius', 'rate-const']
     },
     {
-      id: 'arrhenius', cat: 'core', zh: 'Arrhenius 方程', en: 'Arrhenius equation', abbr: '', sym: 'k = A·e^(−Eₐ/RT)', unit: '',
+      id: 'arrhenius', fig: 'arrhenius', cat: 'core', zh: 'Arrhenius 方程', en: 'Arrhenius equation', abbr: '', sym: 'k = A·e^(−Eₐ/RT)', unit: '',
       def: '把速率常数写成温度的指数函数：k = A·exp(−Eₐ/RT)。本平台四个模块中的所有速率常数都由此式给出温度依赖。',
       why: '它解释了为什么温度是陶瓷工艺里最有效、也最危险的旋钮：同一个指数项同时放大了反应速率和晶粒长大速率。',
       pit: '用 ln k~1/T 拟合时要注意温区。跨越相变或机理转换（如由界面控制转为扩散控制）时，曲线会出现折点而不是一条直线。',
@@ -67,14 +67,14 @@
       mod: 'kiln', param: 'ramp', rel: ['biot', 'thermal-lag', 'temp-gap']
     },
     {
-      id: 'biot', cat: 'core', zh: 'Biot 数', en: 'Biot number', abbr: 'Bi', sym: 'Bi = hL/λ', unit: '',
+      id: 'biot', fig: 'biot', cat: 'core', zh: 'Biot 数', en: 'Biot number', abbr: 'Bi', sym: 'Bi = hL/λ', unit: '',
       def: '内部导热阻力与表面换热阻力之比。Bi 很小意味着物体内部近似等温。',
       why: '它决定了「样品内部是否均匀」这一层不均匀性。实验室小坩埚 Bi 小，工业大件 Bi 大。',
       pit: '实验室小试样上得到的均匀结论不能直接外推到工业大件，几何放大后 Bi 会显著增大。',
       mod: 'kiln', param: 'sy', rel: ['thermal-time-const', 'uniformity']
     },
     {
-      id: 'boundary-condition', cat: 'core', zh: '边界条件', en: 'Boundary condition', abbr: 'BC', sym: 'Dirichlet / Neumann / Robin', unit: '',
+      id: 'boundary-condition', fig: 'boundary-condition', cat: 'core', zh: '边界条件', en: 'Boundary condition', abbr: 'BC', sym: 'Dirichlet / Neumann / Robin', unit: '',
       def: '求解微分方程时在边界上给定的约束：第一类给定变量值，第二类给定通量，第三类给定与环境的换热关系。',
       why: '本平台所有可调参数本质上都在改边界条件：炉壁温度、进气分压、源边界浓度、表面换热系数。',
       pit: '最常见的错误是把边界值当成场内的值。设定 1050 ℃ 是加热壁的温度，不是样品的温度。',
@@ -88,7 +88,7 @@
       mod: 'kiln', param: 'hold', rel: ['furnace-field', 'thermal-lag']
     },
     {
-      id: 'fick', cat: 'core', zh: 'Fick 定律与扩散系数', en: 'Fick\u2019s law / Diffusivity', abbr: '', sym: 'J = −D∇C', unit: 'm²/s',
+      id: 'fick', fig: 'fick', cat: 'core', zh: 'Fick 定律与扩散系数', en: 'Fick\u2019s law / Diffusivity', abbr: '', sym: 'J = −D∇C', unit: 'm²/s',
       def: '扩散通量正比于浓度梯度，比例系数为扩散系数 D；D 本身按 Arrhenius 随温度变化。',
       why: '反应-扩散模块中，反应前沿推进的快慢由 D 与反应速率竞争决定。',
       pit: '多孔介质应使用有效扩散系数 D_eff = D·ε/τ。直接代入本征 D 会明显高估渗透深度。',
@@ -109,7 +109,7 @@
       mod: 'kiln', param: 'Tset', rel: ['thermal-lag', 'heat-transfer']
     },
     {
-      id: 'thermal-lag', cat: 'core', zh: '热滞后', en: 'Thermal lag', abbr: '', sym: 'ΔT_lag', unit: 'K',
+      id: 'thermal-lag', fig: 'thermal-lag', cat: 'core', zh: '热滞后', en: 'Thermal lag', abbr: '', sym: 'ΔT_lag', unit: 'K',
       def: '样品温度落后于环境温度的现象，源于样品自身热容与有限的表面换热能力。',
       why: '同样的设定曲线，热容大的装载（匣钵、大坩埚）滞后更多，有效保温时间更短。',
       pit: '滞后不是仪表故障，无法通过校准热电偶消除。它属于物理过程，只能靠降低升温速率或延长保温来补偿。',
@@ -146,14 +146,14 @@
 
     /* ---------------------------- 固相反应 ---------------------------- */
     {
-      id: 'jmak', cat: 'solid', zh: 'JMAK 方程', en: 'Johnson-Mehl-Avrami-Kolmogorov', abbr: 'JMAK', sym: 'α = 1 − e^(−(kt)^n)', unit: '',
+      id: 'jmak', fig: 'jmak', cat: 'solid', zh: 'JMAK 方程', en: 'Johnson-Mehl-Avrami-Kolmogorov', abbr: 'JMAK', sym: 'α = 1 − e^(−(kt)^n)', unit: '',
       def: '描述成核-长大控制的等温转变动力学：α = 1 − exp[−(kt)^n]，其中 k 是速率常数，n 是 Avrami 指数。',
       why: '固相模块用它生成 S 形转化率曲线。n 与 k 一起决定曲线陡不陡、什么时候起势。',
       pit: 'JMAK 假设随机成核、各向同性长大、长大过程互不碰撞。实际反应后期颗粒碰撞合并，曲线会偏离模型。',
       mod: 'solid', param: 'T', rel: ['avrami', 'nucleation-growth']
     },
     {
-      id: 'avrami', cat: 'solid', zh: 'Avrami 指数', en: 'Avrami exponent', abbr: '', sym: 'n', unit: '',
+      id: 'avrami', fig: 'jmak', cat: 'solid', zh: 'Avrami 指数', en: 'Avrami exponent', abbr: '', sym: 'n', unit: '',
       def: 'JMAK 方程中的指数，综合反映成核方式与长大维度。界面控制下三维长大配瞬时成核约为 3、持续成核约为 4；扩散控制下则要低得多，持续成核约 2.5、瞬时成核约 2。',
       why: 'n 发生变化意味着机理变化，而不只是「曲线陡一点」。它是判断控制机制的指纹。',
       pit: '用单条曲线拟合 n 很不可靠。需要一组不同温度下的曲线同时拟合，才能把 k 与 n 分离。另外 n 不是连续可调的旋钮：它由机理决定，取到机理允许的范围之外，就等于编了一个不存在的机制。',
@@ -167,7 +167,7 @@
       mod: 'solid', param: 'T', rel: ['jmak', 'grain-growth', 'avrami']
     },
     {
-      id: 'shrinking-core', cat: 'solid', zh: '未反应核收缩模型', en: 'Shrinking core model', abbr: '', sym: 'r_c(t)', unit: '',
+      id: 'shrinking-core', fig: 'shrinking-core', cat: 'solid', zh: '未反应核收缩模型', en: 'Shrinking core model', abbr: '', sym: 'r_c(t)', unit: '',
       def: '反应从颗粒表面逐层向内推进，未反应核逐渐缩小。速率由界面反应或产物层内扩散控制。',
       why: '实验台微观组织动画里那个逐渐变小的深色核，就是这个模型的可视化。',
       pit: '产物层一旦致密化，控制步骤会从界面反应切换为扩散，速率出现明显拐点，不能再用单一速率式外推。',
@@ -195,7 +195,7 @@
       mod: 'solid', param: 'C', rel: ['conversion', 'densification']
     },
     {
-      id: 'densification', cat: 'solid', zh: '致密化', en: 'Densification', abbr: '', sym: 'ρ_rel', unit: '%',
+      id: 'densification', fig: 'relative-density', cat: 'solid', zh: '致密化', en: 'Densification', abbr: '', sym: 'ρ_rel', unit: '%',
       def: '颗粒间孔隙逐渐消除、坯体收缩的过程，驱动力是降低表面能。',
       why: '平台用相对致密度表征。它与转化率并不同步：反应可能已经完成，致密化才刚起步。',
       pit: '致密化与晶粒长大互相竞争。升温太快会出现「致密没完成、晶粒已粗化」的最差组合。',
@@ -209,14 +209,14 @@
       mod: 'solid', param: 'T', rel: ['densification', 'nucleation-growth']
     },
     {
-      id: 'relative-density', cat: 'solid', zh: '相对致密度', en: 'Relative density', abbr: '', sym: 'ρ/ρ_th', unit: '%',
+      id: 'relative-density', fig: 'relative-density', cat: 'solid', zh: '相对致密度', en: 'Relative density', abbr: '', sym: 'ρ/ρ_th', unit: '%',
       def: '实测体积密度与同成分理论密度之比，等价于 100% 减去气孔率。',
       why: '它直接对应气孔率与一系列性能：强度、透光率、电导率、介电损耗。',
       pit: '相对致密度高不代表组织好。粗晶高致密与细晶高致密在性能上差别很大，两个指标要一起看。',
       mod: 'solid', param: 'T', rel: ['densification', 'grain-growth']
     },
     {
-      id: 'perovskite-structure', cat: 'solid', zh: '钙钛矿结构', en: 'Perovskite structure', abbr: 'ABO₃', sym: 'ABO₃', unit: '',
+      id: 'perovskite-structure', fig: 'perovskite-structure', cat: 'solid', zh: '钙钛矿结构', en: 'Perovskite structure', abbr: 'ABO₃', sym: 'ABO₃', unit: '',
       def: '以立方或八面体骨架为核心的一类晶体结构原型：二价 A 位阳离子占立方体顶点，四价 B 位占体心，氧离子占面心。',
       why: 'SrTiO₃、BaTiO₃ 都属这一族。钙钛矿的介电、压电、超导性能对结构容差因子极其敏感，烧成工艺的微小偏差会直接改掉材料性能。',
       pit: '化学式对了不等于结构对了。SrCO₃ 与 TiO₂ 按 1:1 混合，XRD 上仍可能有大量杂相峰，说明固相反应没走完，得到的只是「成分正确的多相混合物」。',
@@ -260,7 +260,7 @@
 
     /* ------------------------------ CVD ------------------------------ */
     {
-      id: 'langmuir', cat: 'cvd', zh: 'Langmuir-Hinshelwood 动力学', en: 'Langmuir-Hinshelwood kinetics', abbr: 'L-H', sym: 'r ∝ Kp/(1+Kp)', unit: '',
+      id: 'langmuir', fig: 'langmuir', cat: 'cvd', zh: 'Langmuir-Hinshelwood 动力学', en: 'Langmuir-Hinshelwood kinetics', abbr: 'L-H', sym: 'r ∝ Kp/(1+Kp)', unit: '',
       def: '表面反应速率对前驱体分压呈饱和型关系：低压段近似线性，高压段趋于平台。',
       why: '它解释了为什么一味提高分压，沉积速率最终不再上升：表面吸附位已经饱和。',
       pit: '饱和不等于输运限制。区分两者要看温度依赖：表面反应控制对温度极敏感，输运控制几乎不随温度变。',
@@ -281,7 +281,7 @@
       mod: 'cvd', param: 'Q', rel: ['boundary-layer', 'series-resistance', 'surface-limited']
     },
     {
-      id: 'series-resistance', cat: 'cvd', zh: '串联阻力', en: 'Series resistance', abbr: '', sym: '1/k = 1/k_s + 1/k_m', unit: '',
+      id: 'series-resistance', fig: 'series-resistance', cat: 'cvd', zh: '串联阻力', en: 'Series resistance', abbr: '', sym: '1/k = 1/k_s + 1/k_m', unit: '',
       def: '表面反应与质量输运是两个串联步骤，总阻力等于两者倒数之和，速率由较慢的一步决定。',
       why: '这是本平台 CVD 模块的核心公式。它使速率曲线自然出现「温度敏感段」与「流量敏感段」两段。',
       pit: '两段交界处不能用任一单段的规律外推。工艺流程常落在这个过渡区，最容易被误判。',
@@ -337,14 +337,14 @@
       mod: 'cvd', param: 'T', rel: ['deposition-rate', 'thermal-lag']
     },
     {
-      id: 'conformality', cat: 'cvd', zh: '保形性', en: 'Conformality / Step coverage', abbr: '', sym: 't_side/t_top', unit: '',
+      id: 'conformality', fig: 'conformality', cat: 'cvd', zh: '保形性', en: 'Conformality / Step coverage', abbr: '', sym: 't_side/t_top', unit: '',
       def: '膜在沟槽、通孔侧壁与底部的覆盖能力，通常用侧壁厚度与顶部厚度之比衡量。',
       why: '输运控制区保形性差（顶部厚、底部薄甚至封口），反应控制区保形性好。',
       pit: '均匀性好不等于保形性好。前者评价平面内厚度一致性，后者评价三维形貌覆盖能力。',
       mod: 'cvd', param: 'P', rel: ['mass-transport-limited', 'wafer-uniformity']
     },
     {
-      id: 'ald-self-limit', cat: 'cvd', zh: '原子层沉积（自限性）', en: 'Atomic layer deposition (self-limiting)', abbr: 'ALD', sym: 'Δt = C·τ', unit: '',
+      id: 'ald-self-limit', fig: 'ald-self-limit', cat: 'cvd', zh: '原子层沉积（自限性）', en: 'Atomic layer deposition (self-limiting)', abbr: 'ALD', sym: 'Δt = C·τ', unit: '',
       def: '用「脉冲与吹扫」循环交替供给两种前驱体，每次脉冲只让表面恰好饱和一个单分子层，靠自限性把厚度控制在埃级精度的成膜方法。',
       why: 'TMA/H₂O 沉积 Al₂O₃ 是它的典型代表。本平台把它建模成活化能极低（60 kJ/mol）、速率几乎不随温度变化的一层，正好对应 ALD「弱温度依赖」的真实特征。',
       pit: 'ALD 是循环过程，「沉积速率」在 nm/min 这个尺度上没有意义，真正可读的是每循环的厚度增量（约 0.1 nm/cycle）和循环数；用 CVD 的思路去理解 ALD 的速率曲线会得出错误结论。另一个容易踩的坑是温度上限：T-ALD 用 TMA/H₂O 只能在 200~400 ℃ 做，再高 TMA 会自分解。',
@@ -395,7 +395,7 @@
       mod: 'rd', param: 'C0', rel: ['damkohler', 'penetration-depth', 'finite-difference']
     },
     {
-      id: 'damkohler', cat: 'rd', zh: 'Damköhler 数', en: 'Damköhler number', abbr: 'Da', sym: 'Da = kC₀L²/D', unit: '',
+      id: 'damkohler', fig: 'damkohler', cat: 'rd', zh: 'Damköhler 数', en: 'Damköhler number', abbr: 'Da', sym: 'Da = kC₀L²/D', unit: '',
       def: '反应速率与扩散速率之比。Da ≫ 1 时反应快于扩散，前沿陡而浅；Da ≪ 1 时扩散快于反应，前沿宽而深。',
       why: '一个无量纲数就能判断反应发生在哪儿、能渗多深。平台直接把它作为输出指标。',
       pit: 'Da 依赖特征长度 L 的定义。不同文献定义不同，比较数量级前必须统一。',
@@ -423,7 +423,7 @@
       mod: 'rd', param: 'T', rel: ['damkohler', 'nucleation-growth', 'reaction-front']
     },
     {
-      id: 'penetration-depth', cat: 'rd', zh: '渗透深度', en: 'Penetration depth', abbr: '', sym: 'δ_p', unit: 'μm',
+      id: 'penetration-depth', fig: 'penetration-depth', cat: 'rd', zh: '渗透深度', en: 'Penetration depth', abbr: '', sym: 'δ_p', unit: 'μm',
       def: '反应物浓度降到边界值某一规定比例处距表面的深度。',
       why: '平台 RD 模块的主输出之一，直接决定渗层、涂层、电极浸润层是否够厚。',
       pit: '扩散控制下渗透深度随时间按 √t 增长，不是线性增长。靠延长时间翻倍深度需要四倍时间。',
@@ -474,7 +474,7 @@
       mod: 'kiln', param: 'Tset', rel: ['boundary-condition', 'temp-gap', 'thermal-lag']
     },
     {
-      id: 'furnace-field', cat: 'kiln', zh: '炉膛稳态热场', en: 'Furnace temperature field', abbr: '', sym: '∇²T = 0', unit: '',
+      id: 'furnace-field', fig: 'furnace-field', cat: 'kiln', zh: '炉膛稳态热场', en: 'Furnace temperature field', abbr: '', sym: '∇²T = 0', unit: '',
       def: '炉膛内温度的空间分布，由四壁给定的边界温度与炉膛几何共同决定，稳态下满足拉普拉斯方程。',
       why: '平台用 SOR 迭代在 64×40 网格上解出这个场。装料区的温差不是假设的，是这个解的自然结果。',
       pit: '空炉解出的场与装载后的场不同。样品与坩埚会吸收热量、遮挡辐射，把局部温度拉低。',
@@ -546,7 +546,7 @@
       mod: 'rd', param: '', rel: ['explicit-stability', 'grid-independence']
     },
     {
-      id: 'explicit-stability', cat: 'num', zh: '显式格式与稳定性', en: 'Explicit scheme stability', abbr: '', sym: 'Δt ≤ Δx²/(2D)', unit: '',
+      id: 'explicit-stability', fig: 'explicit-stability', cat: 'num', zh: '显式格式与稳定性', en: 'Explicit scheme stability', abbr: '', sym: 'Δt ≤ Δx²/(2D)', unit: '',
       def: '显式时间推进每一步只用已知时刻的值，时间步长必须小于稳定性上限，否则误差会指数放大。',
       why: '平台据此反推时间步数并设上限。曾出现过步长超限导致梯度算到 1e24 的数值发散。',
       pit: '加大时间步「省时间」是错觉。越过稳定限后结果不是变粗糙，而是直接崩掉。',
@@ -560,7 +560,7 @@
       mod: 'rd', param: 'T', rel: ['reaction-front', 'concentration-gradient', 'damkohler']
     },
     {
-      id: 'undercut', cat: 'rd', zh: '侧蚀与钻蚀', en: 'Lateral undercut', abbr: '', sym: '', unit: '',
+      id: 'undercut', fig: 'undercut', cat: 'rd', zh: '侧蚀与钻蚀', en: 'Lateral undercut', abbr: '', sym: '', unit: '',
       def: '刻蚀液从掩模边缘渗到掩模下方、把侧壁掏空的破坏性刻蚀行为。',
       why: '湿法刻蚀中刻蚀剂同时从上方与侧向到达，反应与扩散哪一方占优直接决定图形保真度，这正是 Damköhler 数要回答的问题。',
       pit: '把钻蚀归因于「刻蚀时间太长」只是表象。扩散控制的体系即使缩短时间，只要温度仍偏高端，钻蚀依然存在。',
@@ -631,7 +631,7 @@
     },
     /* ------------------------------ 热处理 ------------------------------ */
     {
-      id: 'carbon-content', cat: 'heat', zh: '碳含量与 Fe-C 相图', en: 'Carbon content', abbr: '', sym: 'C%', unit: 'wt%',
+      id: 'carbon-content', fig: 'carbon-content', cat: 'heat', zh: '碳含量与 Fe-C 相图', en: 'Carbon content', abbr: '', sym: 'C%', unit: 'wt%',
       def: '铁碳合金中碳的质量分数。共析点 0.8%，低于它出现先共析铁素体，高于它出现先共析渗碳体。',
       why: '这是热处理里唯一不能靠工艺调整的变量：它同时定下了 Ac3 的位置、珠光体的比例，以及矫顽力的下限。',
       pit: '不要把钢与铁的界线记成 2.11%。那是碳在奥氏体中的最大溶解度；室温下碳在铁素体中的溶解度只有约 0.00005%，所以哪怕 0.02% 的碳也几乎全部以渗碳体形式存在。',
@@ -645,14 +645,14 @@
       mod: 'heat', param: 'Tset', rel: ['carbon-content', 'grain-growth', 'martensite']
     },
     {
-      id: 'cct-curve', cat: 'heat', zh: '连续冷却转变曲线', en: 'Continuous cooling transformation', abbr: 'CCT', sym: 'CCT', unit: '',
+      id: 'cct-curve', fig: 'cct-curve', cat: 'heat', zh: '连续冷却转变曲线', en: 'Continuous cooling transformation', abbr: 'CCT', sym: 'CCT', unit: '',
       def: '以冷却速度为横轴、温度为纵轴，标出各冷速下转变开始与结束的温度区间。',
       why: '它就是「冷却速度决定组织」的定量表达：左上为珠光体区，中部为贝氏体区，下方为马氏体区。临界冷速是能否淬硬的判据。',
       pit: 'CCT 不等于 TTT。TTT 是等温转变曲线，直接把 TTT 当连续冷却用会高估临界冷速，误以为空冷也能淬硬。',
       mod: 'heat', param: 'cool', rel: ['martensite', 'pearlite-series', 'carbon-content']
     },
     {
-      id: 'pearlite-series', cat: 'heat', zh: '珠光体、索氏体与托氏体', en: 'Pearlite / Sorbite / Troostite', abbr: 'P / S / T', sym: '', unit: '',
+      id: 'pearlite-series', fig: 'pearlite-series', cat: 'heat', zh: '珠光体、索氏体与托氏体', en: 'Pearlite / Sorbite / Troostite', abbr: 'P / S / T', sym: '', unit: '',
       def: '三者都是铁素体与渗碳体交替排列的层片状组织，区别只在片层间距。',
       why: '片层越细，铁素体与渗碳体的相界面越多，硬度越高，对磁畴壁的钉扎也越强。粗珠光体片层约 0.3 μm 以上，索氏体约 0.25~0.3 μm，托氏体小于 0.25 μm。',
       pit: '索氏体与托氏体都不是独立相，只是珠光体的细片形态。回火得到的「回火索氏体」与连续冷却得到的索氏体形貌相近，但成因完全不同，不能混为一谈。',
@@ -673,7 +673,7 @@
       mod: 'heat', param: 'atm', rel: ['furnace-atmosphere', 'coercivity', 'carbon-content']
     },
     {
-      id: 'coercivity', cat: 'heat', zh: '矫顽力与磁畴钉扎', en: 'Coercivity', abbr: 'Hc', sym: 'Hc', unit: 'A/m',
+      id: 'coercivity', fig: 'coercivity', cat: 'heat', zh: '矫顽力与磁畴钉扎', en: 'Coercivity', abbr: 'Hc', sym: 'Hc', unit: 'A/m',
       def: '使磁化强度降为零所需的反向磁场，衡量材料被磁化之后「记住」的程度。',
       why: '软磁要求越低越好（电磁纯铁约 40~80 A/m），硬磁则相反。凡是能钉扎磁畴壁的缺陷都会抬高它：晶界、渗碳体、位错、内应力。',
       pit: '提高强度与降低矫顽力在钢里往往互相冲突：细化晶粒、增加碳化物能强化，却同时增加钉扎点。这就是磁钢选材的核心矛盾，也是退火要「粗晶 + 少碳化物」的原因。',
