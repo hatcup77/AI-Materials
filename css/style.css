@@ -1154,7 +1154,14 @@ body.live-on .time-read { color: var(--cyan); }
 }
 
 /* 表格 */
-.table-wrap { overflow: auto; max-height: 520px; border-radius: 8px; border: 1px solid var(--line); }
+.table-wrap {
+  --table-actions-w: 96px;
+  overflow: auto;
+  max-height: 520px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  scroll-padding-inline-end: var(--table-actions-w);
+}
 .table-wrap.tall { max-height: calc(100vh - 240px); }
 table.grid-table { width: max-content; min-width: 100%; border-collapse: separate; border-spacing: 0; font-size: 11.5px; }
 table.grid-table th {
@@ -1177,48 +1184,28 @@ table.grid-table td {
   border-bottom: 1px solid var(--line-soft2);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  background-color: var(--panel);
+  background-image: linear-gradient(var(--row-tint, transparent), var(--row-tint, transparent));
 }
-table.grid-table tbody tr:hover td { background: rgba(61, 219, 232, 0.045); color: var(--txt); }
-table.grid-table tbody tr.current td { background: rgba(61, 219, 232, 0.07); }
+table.grid-table tbody tr:hover { --row-tint: rgba(61, 219, 232, 0.045); }
+table.grid-table tbody tr:hover td { color: var(--txt); }
+table.grid-table tbody tr.current { --row-tint: rgba(61, 219, 232, 0.07); }
 .row-dot { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
 .cell-strong { color: var(--txt); font-weight: 600; }
 .cell-dim { color: var(--txt3); }
 
-/* 备注 / 时间 / 操作三列固定在表格右缘：列多时横向滚动也不会把关键操作推出视野 */
-table.grid-table th.col-note, table.grid-table td.col-note { width: 140px; min-width: 140px; }
-table.grid-table th.col-time, table.grid-table td.col-time { width: 56px; min-width: 56px; }
-table.grid-table th.col-actions, table.grid-table td.col-actions { width: 96px; min-width: 96px; }
-
-table.grid-table td.col-note,
-table.grid-table td.col-time,
-table.grid-table td.col-actions {
+/* 仅固定操作列，备注和时间跟随数据滚动。底色保持不透明，覆盖从下方滚过的数值。 */
+table.grid-table th.col-note, table.grid-table td.col-note { text-align: left; }
+table.grid-table th.col-time, table.grid-table td.col-time { text-align: center; }
+table.grid-table th.col-actions, table.grid-table td.col-actions {
   position: sticky;
-  background: var(--panel-bg);
+  inset-inline-end: 0;
+  min-width: var(--table-actions-w);
+  border-inline-start: 1px solid var(--line);
+  text-align: center;
 }
-table.grid-table th.col-note { left: auto; right: 152px; z-index: 4; }
-table.grid-table th.col-time { left: auto; right: 96px; z-index: 4; }
-table.grid-table th.col-actions { left: auto; right: 0; z-index: 4; }
-table.grid-table td.col-note { right: 152px; z-index: 3; }
-table.grid-table td.col-time { right: 96px; z-index: 3; }
-table.grid-table td.col-actions { right: 0; z-index: 3; }
-
-table.grid-table th.col-note,
-table.grid-table th.col-time,
-table.grid-table th.col-actions {
-  background: var(--th-bg);
-  box-shadow: -8px 0 10px -8px rgba(0, 0, 0, 0.45);
-}
-table.grid-table td.col-note,
-table.grid-table td.col-time,
-table.grid-table td.col-actions {
-  box-shadow: -8px 0 10px -8px rgba(0, 0, 0, 0.45);
-}
-table.grid-table tbody tr:hover td.col-note,
-table.grid-table tbody tr:hover td.col-time,
-table.grid-table tbody tr:hover td.col-actions,
-table.grid-table tbody tr.current td.col-note,
-table.grid-table tbody tr.current td.col-time,
-table.grid-table tbody tr.current td.col-actions { background: var(--fill-1); }
+table.grid-table th.col-actions { z-index: 4; }
+table.grid-table td.col-actions { z-index: 3; }
 .link-btn {
   background: none; border: 0; color: var(--txt3); cursor: pointer;
   font-family: var(--font); font-size: 11px; padding: 2px 4px; border-radius: 4px;
@@ -2077,6 +2064,7 @@ table.grid-table tbody tr.current td.col-actions { background: var(--fill-1); }
   .tab-info { flex-basis: 100%; margin-left: 0; }
   .card-head { flex-wrap: wrap; }
   .card-head .seg { flex-wrap: wrap; }
+  .toolbar, .tool-left, .tool-right { flex-wrap: wrap; }
 }
 
 @media (max-width: 480px) {
