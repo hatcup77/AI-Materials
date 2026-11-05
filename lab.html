@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>实验台 · AI+ 虚拟仿真材料实验平台</title>
+<meta name="description" content="虚拟仿真材料实验台：调节温度、压力、浓度与装炉位置，实时逐步求解反应过程，支持多组对比、敏感性分析与实验报告生成。">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<meta name="theme-color" content="#0b1524">
+<script>
+  /* 首屏即应用主题，避免刷新时闪白/闪黑 */
+  (function () {
+    try {
+      var t = localStorage.getItem('hdu-lab-theme');
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  })();
+</script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- 窄屏提示：<1180px 时自动出现 -->
+  <div class="narrow-hint" id="narrowHint" hidden>
+    <b>窄屏模式</b>
+    <span>当前窗口宽度不足 1180px，实验台已改为纵向堆叠显示，图表与参数建议在更宽的屏幕（如 1366×768 以上）上使用。</span>
+    <button class="nh-close" id="btnNarrowClose" type="button">知道了</button>
+  </div>
+
+  <!-- ======================= 顶部品牌栏 ======================= -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <img class="bm-light" src="assets/hdu-emblem-light.png" alt="杭州电子科技大学校徽">
+        <img class="bm-blue" src="assets/hdu-emblem-blue.png" alt="">
+      </div>
+      <div class="brand-text">
+        <h1>AI+ 虚拟仿真材料实验平台</h1>
+        <p>杭州电子科技大学 · 材料科学与工程虚拟仿真实验教学中心</p>
+      </div>
+    </div>
+    <div class="top-right">
+      <a class="btn ghost home-back" href="index.html" title="返回首页">
+        <span class="ico">‹</span> 首页
+      </a>
+      <div class="seg" id="moduleSwitch"></div>
+      <button class="btn ghost" id="btnGlossary">
+        <span class="ico">▤</span> 术语库
+      </button>
+      <button class="btn ghost" id="btnGuide">
+        <span class="ico">◈</span> 实验指导
+      </button>
+      <button class="theme-switch" id="btnTheme" role="switch" aria-checked="true" title="切换亮色 / 深色模式" aria-label="切换亮色 / 深色模式">
+        <i class="ts-ico sun">☀</i><i class="ts-ico moon">☾</i><span class="ts-knob"></span>
+      </button>
+      <div class="status-pill"><i></i><span>计算引擎就绪</span></div>
+    </div>
+  </header>
+
+  <main class="layout">
+
+    <!-- ======================= 左：实验条件 ======================= -->
+    <aside class="panel panel-left">
+      <div class="panel-head">
+        <h2>实验条件</h2>
+        <span class="tag" id="moduleTag">固相反应</span>
+      </div>
+
+      <div class="sub-block">
+        <label class="field-label">材料体系</label>
+        <div class="select-wrap">
+          <select id="materialSelect"></select>
+        </div>
+        <div class="material-note" id="materialNote"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="sliders" id="paramList"></div>
+
+      <div class="divider"></div>
+
+      <div class="sub-block">
+        <label class="field-label">工艺预设</label>
+        <div class="preset-grid" id="presetList"></div>
+      </div>
+
+      <button class="btn primary run-btn" id="btnRun">
+        <span class="run-ico">▶</span> 运行仿真
+      </button>
+      <div class="run-hint">调整参数后点击运行，结果将自动写入数据记录</div>
+    </aside>
+
+    <!-- ======================= 中：主工作区 ======================= -->
+    <section class="stage">
+      <div class="tabs" id="mainTabs">
+        <button class="tab active" data-tab="bench">虚拟实验台</button>
+        <button class="tab" data-tab="response">边界条件响应</button>
+        <button class="tab" data-tab="compare">多组对比分析</button>
+        <button class="tab" data-tab="data">数据与报告</button>
+        <div class="tab-info" id="tabInfo"></div>
+      </div>
+
+      <!-- ---------- 实验台 ---------- -->
+      <div class="tab-body active" data-body="bench">
+        <div class="kpi-row" id="kpiRow"></div>
+
+        <div class="viz-grid">
+          <div class="card viz-card">
+            <div class="card-head">
+              <div>
+                <h3 id="vizTitle">微观组织演化</h3>
+                <span class="card-sub" id="vizSub">JMAK 成核-长大过程实时可视化</span>
+              </div>
+              <div class="legend" id="vizLegend"></div>
+            </div>
+            <div class="canvas-wrap">
+              <canvas id="vizCanvas"></canvas>
+              <div class="viz-hud">
+                <span class="hud-item"><b id="hudT">0</b><i>min</i></span>
+                <span class="hud-sep"></span>
+                <span class="hud-item"><b id="hudP">0</b><i id="hudPUnit">%</i></span>
+              </div>
+            </div>
+            <div class="viz-bar">
+              <button class="btn icon" id="btnPlay" title="播放/暂停">▶</button>
+              <button class="btn icon" id="btnRewind" title="回到起点">↺</button>
+              <input type="range" id="timeline" min="0" max="1000" value="1000">
+              <span class="time-read" id="timeLabel">t = 0 min</span>
+            </div>
+            <div class="live-bar" id="liveBar">
+              <div class="live-row">
+                <button class="live-toggle" id="btnLive" role="switch" aria-checked="false"
+                        title="不预先算完整段，按真实时间逐步求解">
+                  <span class="lt-track"><i></i></span>
+                  <span class="lt-text">实时演算</span>
+                </button>
+                <span class="live-state" id="liveState">关闭时直接给出终值</span>
+                <button class="btn sm ghost live-keep" id="btnKeep" disabled>记入数据表</button>
+              </div>
+              <div class="live-speed" id="liveSpeed" hidden>
+                <span class="ls-label">现实 1 s ≈</span>
+                <input type="range" id="liveRate" class="ls-range" min="1" max="60" step="1" value="10"
+                       aria-label="时间换算：现实一秒对应的模拟分钟数">
+                <span class="ls-rate-val" id="liveRateVal">10</span>
+                <span class="ls-label">min 模拟</span>
+                <span class="ls-meta" id="liveMeta">全程约 12 s</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card chart-card">
+            <div class="card-head">
+              <div>
+                <h3>过程曲线</h3>
+                <span class="card-sub">点击图例可切换显示</span>
+              </div>
+            </div>
+            <div class="chips" id="seriesChips"></div>
+            <div class="chart-wrap tall"><canvas id="chartProcess"></canvas></div>
+          </div>
+        </div>
+
+        <div class="card insight-card">
+          <div class="card-head">
+            <div>
+              <h3>实验现象解读</h3>
+              <span class="card-sub">基于本次仿真结果自动生成</span>
+            </div>
+            <span class="ai-badge">AI 解读</span>
+          </div>
+          <div class="insight-grid" id="insightGrid"></div>
+        </div>
+      </div>
+
+      <!-- ---------- 响应曲线 ---------- -->
+      <div class="tab-body" data-body="response">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h3>边界条件 → 实验结果的响应关系</h3>
+              <span class="card-sub">固定其余参数，扫描单一实验条件，观察指标变化趋势</span>
+            </div>
+            <div class="seg small" id="sweepSwitch"></div>
+          </div>
+          <div class="chart-wrap xl"><canvas id="chartSweep"></canvas></div>
+          <div class="sweep-note" id="sweepNote"></div>
+        </div>
+        <div class="sweep-grid" id="sweepCards"></div>
+      </div>
+
+      <!-- ---------- 对比分析 ---------- -->
+      <div class="tab-body" data-body="compare">
+        <div class="toolbar">
+          <div class="tool-left">
+            <span class="count-badge"><b id="cmpCount">0</b> 组实验待对比</span>
+            <span class="tool-hint" id="cmpHint">运行仿真后可点击「加入对比」</span>
+          </div>
+          <div class="tool-right">
+            <button class="btn ghost sm" id="btnAddCompare">＋ 加入当前结果</button>
+            <button class="btn ghost sm" id="btnClearCompare">清空对比</button>
+          </div>
+        </div>
+
+        <div class="compare-grid">
+          <div class="card">
+            <div class="card-head">
+              <div><h3>过程曲线对比</h3><span class="card-sub" id="cmpChartSub">归一化主指标随时间的演化</span></div>
+            </div>
+            <div class="chart-wrap tall">
+              <canvas id="chartCompare"></canvas>
+              <div class="chart-empty" id="cmpEmptyA"><span class="es-ico">◫</span>暂无对比数据<br>运行仿真后点击「＋ 加入当前结果」</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div><h3>关键指标对比</h3><span class="card-sub" id="cmpBarSub">综合评分</span></div>
+              <select class="mini-select" id="cmpMetricSelect"></select>
+            </div>
+            <div class="chart-wrap tall">
+              <canvas id="chartCompareBar"></canvas>
+              <div class="chart-empty" id="cmpEmptyB"><span class="es-ico">▤</span>暂无对比数据</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div><h3>对比数据表</h3><span class="card-sub">参数与结果逐项对照</span></div></div>
+          <div class="table-wrap" id="compareTableWrap"></div>
+        </div>
+      </div>
+
+      <!-- ---------- 数据与报告 ---------- -->
+      <div class="tab-body" data-body="data">
+        <div class="toolbar">
+          <div class="tool-left">
+            <span class="count-badge"><b id="dataCount">0</b> 条仿真记录</span>
+            <span class="data-save-note">记录保存在本标签页，刷新不丢</span>
+          </div>
+          <div class="tool-right">
+            <button class="btn ghost sm" id="btnClearData">清空本模块</button>
+            <button class="btn ghost sm" id="btnExport">导出 CSV</button>
+            <button class="btn ghost sm" id="btnReport">生成实验报告</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrap tall" id="dataTableWrap"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= 右：AI 助手 ======================= -->
+    <aside class="panel panel-right" id="aiPanel">
+
+      <!-- 收起态：竖向把手 -->
+      <button class="ai-rail" id="btnAiExpand" type="button" title="展开 AI 实验助手" aria-label="展开 AI 实验助手" aria-expanded="false">
+        <span class="ai-rail-chev">‹</span>
+        <span class="ai-rail-badge">AI</span>
+        <span class="ai-rail-text">实验助手</span>
+      </button>
+
+      <!-- 展开态：完整内容 -->
+      <div class="ai-body" id="aiBody">
+      <div class="panel-head">
+        <h2>AI 实验助手</h2>
+        <div class="panel-head-right">
+          <span class="tag accent" id="aiTag">本地模型</span>
+          <button class="ai-collapse" id="btnAiConfig" type="button" title="接入外部大模型" aria-label="接入外部大模型">⚙</button>
+          <button class="ai-collapse" id="btnAiCollapse" type="button" title="收起面板" aria-label="收起 AI 实验助手" aria-expanded="true">›</button>
+        </div>
+      </div>
+
+      <div class="ai-block">
+        <div class="ai-block-head">
+          <span class="ai-idx">01</span>
+          <h3>工艺智能寻优</h3>
+        </div>
+        <p class="ai-desc">设定优化目标与约束，代理模型在参数空间内搜索最优工艺窗口。</p>
+        <div class="ai-form">
+          <label>优化目标</label>
+          <select class="mini-select" id="aiObjective"></select>
+          <label>约束条件</label>
+          <select class="mini-select" id="aiConstraint"></select>
+        </div>
+        <button class="btn primary block" id="btnOptimize">开始寻优</button>
+        <div class="ai-status" id="aiOptStatus"></div>
+        <div class="ai-result" id="aiOptResult"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="ai-block">
+        <div class="ai-block-head">
+          <span class="ai-idx">02</span>
+          <h3>参数敏感性分析</h3>
+        </div>
+        <p class="ai-desc">各实验条件在 <b>±15% 量程</b> 内变化时，对主指标的影响幅度排序。</p>
+        <button class="btn ghost block" id="btnSens">运行敏感性分析</button>
+        <div class="chart-wrap sens">
+          <canvas id="sensCanvas"></canvas>
+          <div class="chart-empty" id="sensEmpty">
+            <span class="es-ico">▤</span>
+            <span>尚未生成敏感性排序</span>
+            <span>点击上方按钮后显示各参数的影响幅度</span>
+          </div>
+        </div>
+        <div class="ai-status" id="sensNote"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="ai-block">
+        <div class="ai-block-head">
+          <span class="ai-idx">03</span>
+          <h3>工艺诊断建议</h3>
+        </div>
+        <div class="advice-list" id="adviceList"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="ai-block ai-chat-block">
+        <div class="ai-block-head">
+          <span class="ai-idx">04</span>
+          <h3>对话解读</h3>
+          <span class="ai-model" id="aiModelChip">未接入</span>
+          <button class="ai-mini-btn" id="btnAiClear" type="button" title="清空对话记录">清空</button>
+        </div>
+        <div class="ai-data-notice" id="aiDataNotice" hidden>
+          <b>发送前请确认</b>
+          <p>接入外部模型后，本次提问会连同<b>当前工况摘要</b>（模块、材料、全部参数、结果指标、本地诊断）一起发送给你配置的接口 <code id="aiNoticeEp"></code>。关闭配置里的「附带实验上下文」开关则只发送你的问题。</p>
+          <div class="ai-notice-actions">
+            <button class="btn ghost sm" id="btnAiNoticeCancel" type="button">取消</button>
+            <button class="btn primary sm" id="btnAiNoticeOk" type="button">我知道了，继续发送</button>
+          </div>
+        </div>
+        <div class="ai-chat" id="aiChat">
+          <div class="ai-chat-empty" id="aiChatEmpty">
+            <span class="ace-ico">✧</span>
+            <p>接入外部大模型后，可以把当前实验条件与结果一并发过去提问。</p>
+            <button class="btn ghost sm" id="btnAiConfig2" type="button">接入外部 API</button>
+          </div>
+        </div>
+        <div class="ai-quick" id="aiQuick">
+          <button type="button" data-q="解释当前这组结果">解释当前结果</button>
+          <button type="button" data-q="为什么不均匀？炉内温度和转化率的差异是怎么来的">为什么不均匀</button>
+          <button type="button" data-q="下一组实验该怎么设计？给出具体参数和建议">下一组怎么设计</button>
+        </div>
+        <div class="ai-input">
+          <textarea id="aiInput" rows="1" placeholder="提问…（Enter 发送，Shift+Enter 换行）" spellcheck="false"></textarea>
+          <button class="btn primary sm" id="btnAiSend" type="button">发送</button>
+        </div>
+        <div class="ai-status" id="aiChatStatus"></div>
+      </div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<!-- ======================= 实验指导弹窗 ======================= -->
+<div class="modal" id="guideModal">
+  <div class="modal-card wide">
+    <div class="modal-head">
+      <h2>实验指导 · <span id="guideModule">固相反应合成</span></h2>
+      <button class="modal-close" data-close="guideModal">✕</button>
+    </div>
+    <div class="modal-body" id="guideBody"></div>
+  </div>
+</div>
+
+<!-- ======================= 实验报告弹窗 ======================= -->
+<div class="modal" id="reportModal">
+  <div class="modal-card wide">
+    <div class="modal-head">
+      <h2>虚拟仿真实验报告</h2>
+      <div class="modal-actions">
+        <button class="btn ghost sm" id="btnPrint">打印 / 存为 PDF</button>
+        <button class="modal-close" data-close="reportModal">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" id="reportBody"></div>
+  </div>
+</div>
+
+<!-- ======================= 术语资料库弹窗 ======================= -->
+<div class="modal" id="glossaryModal">
+  <div class="modal-card wide gl-card-modal">
+    <div class="modal-head">
+      <h2>专业术语资料库 <span class="gl-total" id="glCount"></span></h2>
+      <button class="modal-close" data-close="glossaryModal">✕</button>
+    </div>
+    <div class="gl-toolbar">
+      <div class="gl-search">
+        <span class="gl-search-ico">⌕</span>
+        <input id="glSearch" type="text" autocomplete="off" spellcheck="false"
+               placeholder="搜索术语、英文名或符号：活化能 / Damköhler / Da / 边界">
+        <button class="gl-clear" id="glClear" title="清空">✕</button>
+      </div>
+      <div class="gl-cats" id="glCats"></div>
+    </div>
+    <div class="modal-body gl-body" id="glBody"></div>
+  </div>
+</div>
+
+<!-- ======================= 接入外部大模型 ======================= -->
+<div class="modal" id="aiConfigModal">
+  <div class="modal-card ai-cfg-card">
+    <div class="modal-head">
+      <h2>接入外部大模型</h2>
+      <button class="modal-close" data-close="aiConfigModal">✕</button>
+    </div>
+    <div class="modal-body ai-cfg-body">
+      <p class="ai-cfg-lead">
+        支持任何 <b>OpenAI 兼容</b> 的 <code>/chat/completions</code> 接口（DeepSeek、Kimi、通义千问、硅基流动、
+        本地 Ollama / LM Studio 等）。密钥只保存在本机浏览器的 localStorage 里，不会上传到别处。
+      </p>
+
+      <div class="ai-cfg-grid">
+        <label class="ai-cfg-field">
+          <span>服务商</span>
+          <select id="aiCfgPreset" class="mini-select"></select>
+        </label>
+        <label class="ai-cfg-field">
+          <span>模型</span>
+          <input id="aiCfgModel" type="text" autocomplete="off" spellcheck="false" placeholder="deepseek-chat">
+        </label>
+        <label class="ai-cfg-field wide">
+          <span>接口地址（Base URL）</span>
+          <input id="aiCfgBase" type="text" autocomplete="off" spellcheck="false" placeholder="https://api.deepseek.com/v1">
+        </label>
+        <label class="ai-cfg-field wide">
+          <span>API Key</span>
+          <input id="aiCfgKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-…">
+        </label>
+        <label class="ai-cfg-field">
+          <span>温度</span>
+          <input id="aiCfgTemp" type="number" step="0.1" min="0" max="2" value="0.4">
+        </label>
+        <label class="ai-cfg-field">
+          <span>最大输出 tokens</span>
+          <input id="aiCfgMax" type="number" step="64" min="128" max="8192" value="1200">
+        </label>
+      </div>
+
+      <label class="ai-cfg-check">
+        <input id="aiCfgContext" type="checkbox" checked>
+        <span>提问时自动附带当前模块、实验参数、结果指标与本地诊断作为上下文</span>
+      </label>
+
+      <div class="ai-cfg-tip" id="aiCfgTip">
+        浏览器直连要求接口允许跨域（CORS）。若提示「无法连接」，多半是该服务未开放浏览器直连，
+        可换用支持 CORS 的服务商，或在本机搭一个转发服务。
+      </div>
+
+      <div class="ai-cfg-actions">
+        <button class="btn ghost sm" id="btnAiCfgClear" type="button">清除配置</button>
+        <button class="btn ghost sm" id="btnAiCfgTest" type="button">测试连接</button>
+        <button class="btn primary sm" id="btnAiCfgSave" type="button">保存</button>
+      </div>
+      <div class="ai-cfg-status" id="aiCfgStatus"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- 仿真内核：基础设施 → 各实验模块（模型 + 界面配置）→ 引擎 → 聚合入口，顺序不可调换 -->
+<script src="js/core/base.js"></script>
+<script src="js/modules/solid.js"></script>
+<script src="js/modules/cvd.js"></script>
+<script src="js/modules/rd.js"></script>
+<script src="js/modules/kiln.js"></script>
+<script src="js/modules/heat.js"></script>
+<script src="js/modules/solid.ui.js"></script>
+<script src="js/modules/cvd.ui.js"></script>
+<script src="js/modules/rd.ui.js"></script>
+<script src="js/modules/kiln.ui.js"></script>
+<script src="js/modules/heat.ui.js"></script>
+<script src="js/engine/run.js"></script>
+<script src="js/engine/live.js"></script>
+<script src="js/engine/study.js"></script>
+<script src="js/sim.js"></script>
+
+<!-- 界面层 -->
+<script src="js/charts.js"></script>
+<script src="js/glossary.js"></script>
+<script src="js/ai-api.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+# 本地工作记录：AI 协作日志与项目记忆，属于开发过程产物，不进版本库
+.workbuddy/
+
+# 编辑器与系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 本项目零构建依赖，以下为通用占位
+node_modules/
+dist/
+
+# 临时与备份文件
+*.log
+*.tmp
+*.bak

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI+ 虚拟仿真材料实验平台 · 杭州电子科技大学</title>
+<meta name="description" content="杭州电子科技大学材料科学与工程虚拟仿真实验教学中心出品：固相反应、化学气相沉积、反应-扩散耦合、马弗炉烧成与 Fe-C 热处理五个虚拟实验，实时逐步求解、多组对比与实验报告。">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<meta name="theme-color" content="#0b1524">
+<script>
+  /* 首屏即应用主题，避免刷新时闪白/闪黑 */
+  (function () {
+    try {
+      var t = localStorage.getItem('hdu-lab-theme');
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  })();
+</script>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/home.css">
+</head>
+<body class="home">
+
+<div class="home-wrap">
+
+  <!-- ======================= 顶栏 ======================= -->
+  <header class="topbar home-topbar">
+    <a class="brand brand-link" href="index.html">
+      <span class="brand-mark">
+        <img class="bm-light" src="assets/hdu-emblem-light.png" alt="杭州电子科技大学校徽">
+        <img class="bm-blue" src="assets/hdu-emblem-blue.png" alt="">
+      </span>
+      <span class="brand-text">
+        <h1>AI+ 虚拟仿真材料实验平台</h1>
+        <p>杭州电子科技大学 · 材料科学与工程虚拟仿真实验教学中心</p>
+      </span>
+    </a>
+    <div class="top-right">
+      <a class="btn ghost" href="lab.html">实验台</a>
+      <button class="theme-switch" id="btnTheme" role="switch" aria-checked="true"
+              title="切换亮色 / 深色模式" aria-label="切换亮色 / 深色模式">
+        <i class="ts-ico sun">☀</i><i class="ts-ico moon">☾</i><span class="ts-knob"></span>
+      </button>
+    </div>
+  </header>
+
+  <main class="home-main">
+
+    <!-- ======================= 首屏 ======================= -->
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="hero-eyebrow">杭州电子科技大学 · 材料科学与工程</p>
+        <h2 class="hero-title">从一炉粉体<br>到一层薄膜</h2>
+        <p class="hero-lead">
+          杭电材料学科的五个虚拟实验，共用一套实时求解内核。改一个参数，看到的不只是终值：
+          样品温度怎样滞后于设定值、反应前沿从哪里推进、浓度场在哪个位置先耗尽，都随时间长出来。
+        </p>
+        <div class="hero-actions">
+          <a class="btn primary hero-btn" href="lab.html">进入实验台</a>
+          <a class="btn ghost hero-btn" href="lab.html?m=kiln">从马弗炉开始</a>
+        </div>
+        <dl class="hero-facts">
+          <div><dt>5</dt><dd>实验模块</dd></div>
+          <div><dt>93</dt><dd>专业术语</dd></div>
+          <div><dt>实时</dt><dd>逐步求解</dd></div>
+          <div><dt>本地</dt><dd>默认全程本机求解</dd></div>
+        </dl>
+      </div>
+
+      <div class="hero-art" aria-hidden="true">
+        <div class="ha-frame">
+          <span class="ha-heater"></span>
+          <span class="ha-iso i1"></span>
+          <span class="ha-iso i2"></span>
+          <span class="ha-iso i3"></span>
+          <span class="ha-sample"></span>
+          <span class="ha-label lb1">设定 1050 ℃</span>
+          <span class="ha-label lb2">样品 968 ℃</span>
+        </div>
+        <p class="ha-caption">同一台炉子，同样的设定温度，样品放在哪里，经历的温度就不一样。</p>
+      </div>
+    </section>
+
+    <!-- ======================= 模块入口 ======================= -->
+    <section class="sec">
+      <div class="sec-head">
+        <h3>五个实验模块</h3>
+        <p>每个模块都是一次完整实验：调参数、跑仿真、比结果、出报告。</p>
+      </div>
+
+      <div class="mod-grid">
+        <a class="mod-card" href="lab.html?m=solid">
+          <span class="mod-idx">01</span>
+          <h4>固相反应合成</h4>
+          <p class="mod-sub">高温固相法合成功能陶瓷粉体</p>
+          <p class="mod-desc">温度、保温时间、成型压力如何决定转化率、晶粒尺寸与致密度。</p>
+          <span class="mod-go">进入模块 <i>→</i></span>
+        </a>
+
+        <a class="mod-card" href="lab.html?m=cvd">
+          <span class="mod-idx">02</span>
+          <h4>化学气相沉积</h4>
+          <p class="mod-sub">低压 CVD 生长薄膜</p>
+          <p class="mod-desc">表面反应与气相输运的串联阻力，看清到底是谁在限速。</p>
+          <span class="mod-go">进入模块 <i>→</i></span>
+        </a>
+
+        <a class="mod-card" href="lab.html?m=rd">
+          <span class="mod-idx">03</span>
+          <h4>反应-扩散耦合</h4>
+          <p class="mod-sub">二维浓度场与前沿推进</p>
+          <p class="mod-desc">浓度场耗尽之前，反应前沿能推进多深，由扩散还是反应决定。</p>
+          <span class="mod-go">进入模块 <i>→</i></span>
+        </a>
+
+        <a class="mod-card" href="lab.html?m=kiln">
+          <span class="mod-idx">04</span>
+          <h4>马弗炉烧成</h4>
+          <p class="mod-sub">箱式炉装炉位置与炉膛热场</p>
+          <p class="mod-desc">同一个设定温度，贴加热壁和靠炉门，样品的温度历程差出几十 K。</p>
+          <span class="mod-go">进入模块 <i>→</i></span>
+        </a>
+
+        <a class="mod-card" href="lab.html?m=heat">
+          <span class="mod-idx">05</span>
+          <h4>热处理</h4>
+          <p class="mod-sub">Fe-C 合金的加热、保温与可控冷却</p>
+          <p class="mod-desc">正火、淬火、回火、退火四种工艺，冷却速度一变组织全变，磁性能随之改变。</p>
+          <span class="mod-go">进入模块 <i>→</i></span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ======================= 能力 ======================= -->
+    <section class="sec">
+      <div class="sec-head">
+        <h3>平台能力</h3>
+        <p>不是把结果算好摆着看，而是让过程本身可观察、可干预。</p>
+      </div>
+
+      <div class="cap-grid">
+        <div class="cap">
+          <span class="cap-ico">◷</span>
+          <h4>实时演算</h4>
+          <p>按现实时间推进求解，可暂停、可调「现实 1 秒对应多少模拟分钟」，演算途中改参数从当前位置继续。</p>
+        </div>
+        <div class="cap">
+          <span class="cap-ico">◫</span>
+          <h4>多组对比</h4>
+          <p>同一坐标系里叠过程曲线，关键指标逐项对照，不同配方与工艺的差别一眼看出来。</p>
+        </div>
+        <div class="cap">
+          <span class="cap-ico">✧</span>
+          <h4>AI 实验助手</h4>
+          <p>本地规则模型做寻优、敏感性与工艺诊断；接入外部大模型后，可结合当前实验数据对话解读。</p>
+        </div>
+        <div class="cap">
+          <span class="cap-ico">▤</span>
+          <h4>术语与报告</h4>
+          <p>93 条专业术语按模块归类，随时查；实验记录一键导出 CSV 或生成完整报告。</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="home-foot">
+    <div>
+      <span>杭州电子科技大学 · 材料科学与工程学院</span>
+      <span class="dot">·</span>
+      <span>虚拟仿真实验教学中心</span>
+    </div>
+    <p>纯静态页面：实验数据与密钥只保存在本机浏览器，默认不上传服务器；接入外部大模型对话时，仅发送当前工况摘要（模块、材料、参数、指标）。</p>
+  </footer>
+
+</div>
+
+<script src="js/theme.js"></script>
+<script>
+  (function () {
+    var KEY = 'hdu-lab-theme';
+    function cur() {
+      return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    }
+    function sync(btn) {
+      if (btn) btn.setAttribute('aria-checked', cur() === 'dark' ? 'true' : 'false');
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+      var btn = document.getElementById('btnTheme');
+      sync(btn);
+      // 回到上次用过的模块
+      try {
+        var last = localStorage.getItem('hdu-lab-last-module');
+        if (last && /^(solid|cvd|rd|kiln)$/.test(last)) {
+          var entry = document.querySelector('.hero-actions a.hero-btn');
+          if (entry) entry.href = 'lab.html?m=' + last;
+          var top = document.querySelector('.top-right a.btn');
+          if (top) top.href = 'lab.html?m=' + last;
+        }
+      } catch (e) {}
+      if (!btn) return;
+      btn.addEventListener('click', function () {
+        var next = cur() === 'dark' ? 'light' : 'dark';
+        // 与实验台共用同一套扩散圆过渡
+        if (window.Theme) {
+          window.Theme.switchTo(next, {
+            button: btn,
+            apply: function () {
+              document.documentElement.setAttribute('data-theme', next);
+              window.Theme.save(next);
+              sync(btn);
+            }
+          });
+          return;
+        }
+        document.documentElement.setAttribute('data-theme', next);
+        try { localStorage.setItem(KEY, next); } catch (e) {}
+        sync(btn);
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>
