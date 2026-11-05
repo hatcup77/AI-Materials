@@ -36,6 +36,8 @@
       </span>
     </a>
     <div class="top-right">
+      <button class="btn ghost" id="btnHistory" type="button" aria-expanded="false"
+              aria-controls="histModal">更新历史</button>
       <a class="btn ghost" href="lab.html">实验台</a>
       <button class="theme-switch" id="btnTheme" role="switch" aria-checked="false"
               title="切换亮色 / 深色模式" aria-label="切换亮色 / 深色模式">
@@ -165,6 +167,64 @@
 
 </div>
 
+<!-- ======================= 更新历史 ======================= -->
+<div class="modal" id="histModal" role="dialog" aria-modal="true" aria-labelledby="histTitle">
+  <div class="modal-card hist-card">
+    <div class="modal-head">
+      <h2 id="histTitle">更新历史</h2>
+      <div class="modal-actions">
+        <button class="modal-close" id="histClose" type="button" aria-label="关闭">✕</button>
+      </div>
+    </div>
+    <div class="modal-body hist-body">
+      <p class="hist-intro">网站的功能上新与修复记录，新的在上。</p>
+
+      <ol class="hist-list">
+        <li class="hist-item">
+          <div class="hist-date">2026-11-05<span class="hist-badge">最新</span></div>
+          <ul class="hist-points">
+            <li>新增 Fe-C 热处理模块。正火、淬火、回火、退火四种工艺一键切换，六种牌号从电磁纯铁到 T12 工具钢，冷却速度 0.02 到 200 ℃/s 连续可调。</li>
+            <li>组织图、温度曲线、晶胞结构三块联动：冷速一变，珠光体经索氏体、托氏体、贝氏体一路转到马氏体，硬度与矫顽力同步抬升。</li>
+            <li>代码按实验拆分，每个实验的模型与界面文案各占一个文件。新增实验只要补两个文件，不必再改主流程。</li>
+            <li>术语库扩到 93 条，补入 Fe-C 相图、奥氏体化、CCT 曲线、马氏体与 Ms、脱碳、矫顽力与磁畴钉扎等。</li>
+            <li>多组对比改为先在数据表里勾选、再确认加入，没记录过的结果不会再悄悄混进对比。</li>
+            <li>界面整体收敛：顶栏、参数栏与标签页的间距收紧，一屏能看全的信息变多。</li>
+          </ul>
+        </li>
+
+        <li class="hist-item">
+          <div class="hist-date">2026-11-04</div>
+          <ul class="hist-points">
+            <li>全站清除破折号、下划线与斜体，正文改用逗号和冒号断句，数值区间改用波浪号。</li>
+            <li>修好顶栏按钮的下划线：问题不在样式写错，而是按钮规则里漏了清除链接默认装饰的那一行。</li>
+            <li>预览曲线与曲线图例统一量纲，百分比与温度不再挤在同一根轴上互相压扁。</li>
+          </ul>
+        </li>
+
+        <li class="hist-item">
+          <div class="hist-date">2026-10-31</div>
+          <ul class="hist-points">
+            <li>材料体系从 26 个扩到 49 个，活化能、工艺温度窗口、沉积速率与扩散系数逐条查证文献实测值，不再凭印象填数。</li>
+            <li>术语库从 76 条扩到 86 条，新增碳热还原、氧空位、透明导电膜、光刻胶显影、氢脆等词条。</li>
+            <li>纠正若干站不住脚的科学表述：气氛对锰锌铁氧体的影响方向写反，多个材料的工艺温度窗口偏高，晶粒长大活化能低了一个量级。</li>
+            <li>重做参数标定，让同模块内各材料的默认指标散成谱系，不再出现一整排一模一样的转化率。</li>
+          </ul>
+        </li>
+
+        <li class="hist-item">
+          <div class="hist-date">2026-10-24</div>
+          <ul class="hist-points">
+            <li>平台初版上线，四个实验模块：固相反应合成、化学气相沉积、反应-扩散耦合、马弗炉烧成。</li>
+            <li>实时演算、多组对比、敏感性分析与工艺寻优、术语库、实验报告一并具备。</li>
+            <li>校徽抠图与亮色主题，深色科研风与浅色阅读模式可随时切换。</li>
+            <li>修掉早期一批交互问题：切换模块后曲线读到上一个模块的数据、图例过长被右边缘裁切、提示条堆叠遮挡面板。</li>
+          </ul>
+        </li>
+      </ol>
+    </div>
+  </div>
+</div>
+
 <script src="js/theme.js"></script>
 <script>
   (function () {
@@ -207,6 +267,37 @@
         try { localStorage.setItem(KEY, next); } catch (e) {}
         sync(btn);
       });
+    });
+  })();
+</script>
+
+<script>
+  /* 更新历史弹窗：点击顶栏按钮打开，点关闭、点遮罩或按 Esc 关闭 */
+  (function () {
+    var btn = document.getElementById('btnHistory');
+    var modal = document.getElementById('histModal');
+    var close = document.getElementById('histClose');
+    if (!btn || !modal || !close) return;
+
+    function open() {
+      modal.classList.add('open');
+      btn.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+      close.focus();
+    }
+    function hide() {
+      modal.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+      btn.focus();
+    }
+
+    btn.addEventListener('click', open);
+    close.addEventListener('click', hide);
+    // 点遮罩关闭，点卡片内部不关
+    modal.addEventListener('click', function (e) { if (e.target === modal) hide(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && modal.classList.contains('open')) hide();
     });
   })();
 </script>
