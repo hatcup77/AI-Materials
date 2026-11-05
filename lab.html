@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>实验台 · AI+ 虚拟仿真材料实验平台</title>
 <meta name="description" content="虚拟仿真材料实验台：调节温度、压力、浓度与装炉位置，实时逐步求解反应过程，支持多组对比、敏感性分析与实验报告生成。">
 <link rel="icon" type="image/png" href="assets/favicon.png">
-<meta name="theme-color" content="#0b1524">
+<meta name="theme-color" content="#f5f7fa">
 <script>
   /* 首屏即应用主题，避免刷新时闪白/闪黑 */
   (function () {
@@ -44,52 +44,58 @@
       <a class="btn ghost home-back" href="index.html" title="返回首页">
         <span class="ico">‹</span> 首页
       </a>
-      <div class="seg" id="moduleSwitch"></div>
       <button class="btn ghost" id="btnGlossary">
         <span class="ico">▤</span> 术语库
       </button>
       <button class="btn ghost" id="btnGuide">
         <span class="ico">◈</span> 实验指导
       </button>
-      <button class="theme-switch" id="btnTheme" role="switch" aria-checked="true" title="切换亮色 / 深色模式" aria-label="切换亮色 / 深色模式">
+      <button class="theme-switch" id="btnTheme" role="switch" aria-checked="false" title="切换亮色 / 深色模式" aria-label="切换亮色 / 深色模式">
         <i class="ts-ico sun">☀</i><i class="ts-ico moon">☾</i><span class="ts-knob"></span>
       </button>
-      <div class="status-pill"><i></i><span>计算引擎就绪</span></div>
     </div>
   </header>
+
+  <nav class="lab-nav" aria-label="实验模块">
+    <span class="lab-nav-label" aria-hidden="true">实验模块</span>
+    <div class="seg" id="moduleSwitch"></div>
+  </nav>
 
   <main class="layout">
 
     <!-- ======================= 左：实验条件 ======================= -->
     <aside class="panel panel-left">
-      <div class="panel-head">
-        <h2>实验条件</h2>
-        <span class="tag" id="moduleTag">固相反应</span>
-      </div>
-
-      <div class="sub-block">
-        <label class="field-label">材料体系</label>
-        <div class="select-wrap">
-          <select id="materialSelect"></select>
+      <div class="parameter-scroll">
+        <div class="panel-head">
+          <h2>实验条件</h2>
+          <span class="tag" id="moduleTag">固相反应</span>
         </div>
-        <div class="material-note" id="materialNote"></div>
+
+        <div class="sub-block">
+          <label class="field-label" for="materialSelect">材料体系</label>
+          <div class="select-wrap">
+            <select id="materialSelect"></select>
+          </div>
+          <div class="material-note" id="materialNote"></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="sliders" id="paramList"></div>
+
+        <div class="divider"></div>
+
+        <div class="sub-block">
+          <label class="field-label">工艺预设</label>
+          <div class="preset-grid" id="presetList"></div>
+        </div>
       </div>
-
-      <div class="divider"></div>
-
-      <div class="sliders" id="paramList"></div>
-
-      <div class="divider"></div>
-
-      <div class="sub-block">
-        <label class="field-label">工艺预设</label>
-        <div class="preset-grid" id="presetList"></div>
+      <div class="run-actions">
+        <button class="btn primary run-btn" id="btnRun">
+          <span class="run-ico">▶</span> 运行仿真
+        </button>
+        <div class="run-hint">调整参数后点击运行，结果将自动写入数据记录</div>
       </div>
-
-      <button class="btn primary run-btn" id="btnRun">
-        <span class="run-ico">▶</span> 运行仿真
-      </button>
-      <div class="run-hint">调整参数后点击运行，结果将自动写入数据记录</div>
     </aside>
 
     <!-- ======================= 中：主工作区 ======================= -->
@@ -97,8 +103,8 @@
       <div class="tabs" id="mainTabs">
         <button class="tab active" data-tab="bench">虚拟实验台</button>
         <button class="tab" data-tab="response">边界条件响应</button>
-        <button class="tab" data-tab="compare">多组对比分析</button>
         <button class="tab" data-tab="data">数据与报告</button>
+        <button class="tab" data-tab="compare">多组对比分析</button>
         <div class="tab-info" id="tabInfo"></div>
       </div>
 
@@ -126,7 +132,7 @@
             <div class="viz-bar">
               <button class="btn icon" id="btnPlay" title="播放/暂停">▶</button>
               <button class="btn icon" id="btnRewind" title="回到起点">↺</button>
-              <input type="range" id="timeline" min="0" max="1000" value="1000">
+              <input type="range" id="timeline" min="0" max="1000" value="1000" aria-label="仿真时间轴">
               <span class="time-read" id="timeLabel">t = 0 min</span>
             </div>
             <div class="live-bar" id="liveBar">
@@ -190,15 +196,35 @@
         <div class="sweep-grid" id="sweepCards"></div>
       </div>
 
+      <!-- ---------- 数据与报告 ---------- -->
+      <div class="tab-body" data-body="data">
+        <div class="toolbar">
+          <div class="tool-left">
+            <span class="count-badge"><b id="dataCount">0</b> 条仿真记录</span>
+            <span class="count-badge compare-selection" role="status">已选 <b id="dataCompareCount">0</b> 组</span>
+            <span class="data-save-note" id="dataCompareHint">勾选 2–5 组记录后开始对比</span>
+          </div>
+          <div class="tool-right">
+            <button class="btn ghost sm" id="btnClearData">清空本模块</button>
+            <button class="btn ghost sm" id="btnExport">导出 CSV</button>
+            <button class="btn ghost sm" id="btnReport">生成实验报告</button>
+            <button class="btn primary sm" id="btnStartCompare" type="button" aria-describedby="dataCompareHint" disabled>开始对比</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrap tall" id="dataTableWrap"></div>
+        </div>
+      </div>
+
       <!-- ---------- 对比分析 ---------- -->
       <div class="tab-body" data-body="compare">
         <div class="toolbar">
           <div class="tool-left">
-            <span class="count-badge"><b id="cmpCount">0</b> 组实验待对比</span>
-            <span class="tool-hint" id="cmpHint">运行仿真后可点击「加入对比」</span>
+            <span class="count-badge"><b id="cmpCount">0</b> 组实验参与对比</span>
+            <span class="tool-hint" id="cmpHint">在「数据与报告」中选择要对比的记录</span>
           </div>
           <div class="tool-right">
-            <button class="btn ghost sm" id="btnAddCompare">＋ 加入当前结果</button>
+            <button class="btn ghost sm" id="btnPickCompare" type="button">选择对比数据</button>
             <button class="btn ghost sm" id="btnClearCompare">清空对比</button>
           </div>
         </div>
@@ -210,7 +236,7 @@
             </div>
             <div class="chart-wrap tall">
               <canvas id="chartCompare"></canvas>
-              <div class="chart-empty" id="cmpEmptyA"><span class="es-ico">◫</span>暂无对比数据<br>运行仿真后点击「＋ 加入当前结果」</div>
+              <div class="chart-empty" id="cmpEmptyA"><span class="es-ico">◫</span>暂无对比数据<br>在「数据与报告」中勾选记录，再点击「开始对比」</div>
             </div>
           </div>
           <div class="card">
@@ -228,24 +254,6 @@
         <div class="card">
           <div class="card-head"><div><h3>对比数据表</h3><span class="card-sub">参数与结果逐项对照</span></div></div>
           <div class="table-wrap" id="compareTableWrap"></div>
-        </div>
-      </div>
-
-      <!-- ---------- 数据与报告 ---------- -->
-      <div class="tab-body" data-body="data">
-        <div class="toolbar">
-          <div class="tool-left">
-            <span class="count-badge"><b id="dataCount">0</b> 条仿真记录</span>
-            <span class="data-save-note">记录保存在本标签页，刷新不丢</span>
-          </div>
-          <div class="tool-right">
-            <button class="btn ghost sm" id="btnClearData">清空本模块</button>
-            <button class="btn ghost sm" id="btnExport">导出 CSV</button>
-            <button class="btn ghost sm" id="btnReport">生成实验报告</button>
-          </div>
-        </div>
-        <div class="card">
-          <div class="table-wrap tall" id="dataTableWrap"></div>
         </div>
       </div>
     </section>
