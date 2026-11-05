@@ -92,7 +92,9 @@
       </div>
       <div class="run-actions">
         <button class="btn primary run-btn" id="btnRun">
-          <span class="run-ico">▶</span> 运行仿真
+          <span class="run-spinner" aria-hidden="true"></span>
+          <span class="run-ico" aria-hidden="true">▶</span>
+          <span class="run-label">运行仿真</span>
         </button>
         <div class="run-hint">调整参数后点击运行，结果将自动写入数据记录</div>
       </div>
@@ -136,6 +138,7 @@
               <span class="time-read" id="timeLabel">t = 0 min</span>
             </div>
             <div class="live-bar" id="liveBar">
+              <div class="live-prog" id="liveProgWrap" aria-hidden="true"><i id="liveProg"></i></div>
               <div class="live-row">
                 <button class="live-toggle" id="btnLive" role="switch" aria-checked="false"
                         title="不预先算完整段，按真实时间逐步求解">
@@ -202,7 +205,7 @@
           <div class="tool-left">
             <span class="count-badge"><b id="dataCount">0</b> 条仿真记录</span>
             <span class="count-badge compare-selection" role="status">已选 <b id="dataCompareCount">0</b> 组</span>
-            <span class="data-save-note" id="dataCompareHint">勾选 2–5 组记录后开始对比</span>
+            <span class="data-save-note" id="dataCompareHint">勾选 2~5 组记录后开始对比</span>
           </div>
           <div class="tool-right">
             <button class="btn ghost sm" id="btnClearData">清空本模块</button>
@@ -467,6 +470,26 @@
         <button class="btn primary sm" id="btnAiCfgSave" type="button">保存</button>
       </div>
       <div class="ai-cfg-status" id="aiCfgStatus"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= 完成提示弹窗 ======================= -->
+<div class="modal done-modal" id="doneModal" role="dialog" aria-modal="true" aria-labelledby="doneTitle">
+  <div class="modal-card done-card" tabindex="-1">
+    <div class="done-badge" aria-hidden="true">
+      <svg viewBox="0 0 52 52">
+        <circle class="done-ring" cx="26" cy="26" r="22"></circle>
+        <path class="done-tick" d="M15.5 27.4 L22.6 34.2 L36.8 19.8"></path>
+      </svg>
+    </div>
+    <h2 class="done-title" id="doneTitle">仿真完成</h2>
+    <p class="done-sub" id="doneSub">结果已记入数据表</p>
+    <div class="done-stats" id="doneStats"></div>
+    <p class="done-note">可在「数据与报告」里勾选记录做对比，或直接生成实验报告。</p>
+    <div class="done-actions">
+      <button class="btn ghost" id="doneStay">继续实验</button>
+      <button class="btn primary" id="doneGo">查看数据与报告</button>
     </div>
   </div>
 </div>

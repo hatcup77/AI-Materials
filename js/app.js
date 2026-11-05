@@ -32,13 +32,15 @@
     playing: false,
     raf: null,
     lastTs: 0,
-    live: { on: false, playing: false, rate: null, rateAuto: true, engine: null, tReal: 0, raf: null, last: 0, lastChart: 0, done: false },
+    live: { on: false, playing: false, rate: null, rateAuto: true, engine: null, tReal: 0, raf: null, last: 0, lastChart: 0, done: false, saved: false },
     seriesVisible: {},
     sweepKey: 'T',
     cmpMetric: 'score',
     sens: null,
     runMs: 0,
-    previewTimer: null
+    previewTimer: null,
+    busy: false,            // 「运行仿真」的求解动画进行中
+    pendingDone: null       // 已算完、等回放走到结尾再弹完成提示的那一组
   };
 
   /* ----------------------------- 工具函数 ----------------------------- */
@@ -103,13 +105,21 @@
     // 同时最多保留 3 条，避免批量操作时提示堆叠遮挡右侧面板
     while (wrap.children.length >= 3) wrap.removeChild(wrap.firstElementChild);
     var t = document.createElement('div');
-    t.className = 'toast' + (tone === 'warn' ? ' warn' : '');
+    t.className = 'toast' + (tone === 'warn' ? ' warn' : (tone === 'ok' ? ' ok' : ''));
     t.textContent = msg;
     wrap.appendChild(t);
     setTimeout(function () {
       t.classList.add('out');
       setTimeout(function () { t.remove(); }, 320);
     }, 1900);
+  }
+
+  /* 同名动画类连着加两次只有第一次会播，中间强制一次回流才能重播 */
+  function pulseEl(el, cls) {
+    if (!el) return;
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
   }
 
   /* -------------------------- 记录持久化（本标签页） -------------------------- */
@@ -304,6 +314,7 @@
     $('#btnGuide').addEventListener('click', openGuide);
     bindGlossary();
     bindLive();
+    bindDoneModal();
     bindVizDrag();
   }
 
@@ -445,6 +456,7 @@
     state.booted = true;
     renderCompare();
     renderData();
+    benchEnter();
     aiMarkModuleSwitch(M.name);
   }
 
@@ -657,6 +669,8 @@
     var run = Sim.createRun(state.moduleId, state.params, state.variantId);
     state.runMs = performance.now() - t0;
     state.current = run;
+    // 调参只算预览，之前那组"待提示"的结果已经不代表当前工况，撤掉
+    if (opt.preview) state.pendingDone = null;
     if (!opt.keepFrame) state.frame = 1;
     if (opt.preview && !opt.silent && state.playing) { /* 保持播放 */ }
     renderAll();
@@ -669,8 +683,74 @@
       persistRuns();
       renderData();
       renderCompare();
-      toast('仿真完成 · ' + runLabel(run) + ' 已记入数据表');
+      // 完成提示要等回放走到结尾再弹，这里先登记，由 tick 收尾时兑现
+      state.pendingDone = run;
     }
+  }
+
+  /* 真实求解不到 1ms，界面若瞬间蹦出终值，看着像根本没算。
+     所以点运行后先演 0.72s 的求解态：按钮转圈、旧 KPI 虚化、画布扫一道光，
+     再把结果与回放放出来；回放走到结尾才弹完成提示。 */
+  var RUN_SOLVE_MS = 720;
+  var runBusyTimer = null;
+  var RUN_HINT_IDLE = '调整参数后点击运行，结果将自动写入数据记录';
+
+  function setRunBusy(on) {
+    state.busy = !!on;
+    var btn = $('#btnRun');
+    if (!btn) return;
+    btn.classList.toggle('is-busy', !!on);
+    btn.setAttribute('aria-busy', on ? 'true' : 'false');
+    var label = btn.querySelector('.run-label');
+    if (label) label.textContent = on ? '求解中' : '运行仿真';
+    var stage = $('.stage');
+    if (stage) stage.classList.toggle('solving', !!on);
+    var hint = $('.run-hint');
+    if (hint) hint.textContent = on ? '网格已划分，正在迭代求解…' : RUN_HINT_IDLE;
+    // 求解时别再挂着上一轮的"本次计算 x ms"，那组数字已经过期
+    if (on) $('#tabInfo').textContent = '正在求解…';
+  }
+
+  function flushDoneDialog() {
+    var run = state.pendingDone;
+    if (!run) return;
+    state.pendingDone = null;
+    showDoneDialog(run);
+  }
+
+  function showDoneDialog(run) {
+    if (!run) return;
+    var list = run.metrics || [];
+    var picked = [];
+    list.forEach(function (m) { if (m.key === run.primaryKey) picked.push(m); });
+    list.forEach(function (m) { if (picked.length < 3 && picked.indexOf(m) < 0) picked.push(m); });
+    $('#doneSub').textContent = '已记入数据表 · 第 ' + (run.seq || '·') + ' 组' +
+      (run.variantName ? ' · ' + run.variantName : '');
+    $('#doneStats').innerHTML = picked.map(function (m) {
+      var dg = m.digits == null ? 1 : m.digits;
+      var txt = (m.value == null || !isFinite(m.value)) ? '无' : fmtNum(m.value, dg);
+      return '<div class="done-stat"><span class="ds-label">' + m.label + '</span>' +
+        '<span class="ds-val">' + txt + (m.unit ? '<small>' + m.unit + '</small>' : '') + '</span></div>';
+    }).join('');
+    var m2 = $('#doneModal');
+    // 先摘再开：卡片的入场与勾的描边都是靠类切换重播的
+    m2.classList.remove('open');
+    void m2.offsetWidth;
+    m2.classList.add('open');
+    // 焦点落在卡片本身而不是按钮上，免得一弹出就有一个描边环抢眼
+    setTimeout(function () {
+      var card = m2.querySelector('.done-card');
+      if (card) card.focus({ preventScroll: true });
+    }, 240);
+  }
+
+  function bindDoneModal() {
+    var m = $('#doneModal');
+    if (!m) return;
+    var close = function () { m.classList.remove('open'); };
+    $('#doneStay').addEventListener('click', close);
+    $('#doneGo').addEventListener('click', function () { close(); showTab('data', true); });
+    m.addEventListener('click', function (e) { if (e.target === m) close(); });
   }
 
   function renderAll() {
@@ -685,6 +765,20 @@
     }
     updateTabInfo();
     if (state.sens) runSensitivity(true);
+  }
+
+  /* 切模块后让左栏参数、KPI 与卡片错峰浮上来。类只挂 320ms：
+     动画时长 260ms 加各卡片 30ms 的间隔刚好走完，
+     摘掉之后再重建 KPI（实时演算每帧都重建）就不会再触发一次入场。 */
+  var benchEnterTimer = null;
+  function benchEnter() {
+    clearTimeout(benchEnterTimer);
+    document.body.classList.remove('bench-enter');
+    void document.body.offsetWidth;
+    document.body.classList.add('bench-enter');
+    benchEnterTimer = setTimeout(function () {
+      document.body.classList.remove('bench-enter');
+    }, 320);
   }
 
   /* ------------------------------- KPI ------------------------------- */
@@ -947,12 +1041,21 @@
       // 实时模式下整件事交给 runSim（它会重置并开始演算），
       // 绝不能再启动 tick()，否则两套 rAF 同时推进，暂停键会失效
       if (state.live.on) { runSim({ preview: false }); return; }
+      if (state.busy) return;          // 求解动画期间重复点击直接忽略
       stopAll();
-      runSim({ preview: false });
-      state.frame = 1;
-      updateHud();
-      drawViz();
-      setTimeout(function () { startPlay(); }, 120);
+      clearTimeout(runBusyTimer);
+      setRunBusy(true);
+      var modAtClick = state.moduleId;
+      runBusyTimer = setTimeout(function () {
+        // 等待期间换了实验，这次求解作废，回到常态就行
+        if (state.moduleId !== modAtClick) { setRunBusy(false); return; }
+        setRunBusy(false);
+        runSim({ preview: false });
+        state.frame = 1;
+        updateHud();
+        drawViz();
+        setTimeout(function () { startPlay(); }, 120);
+      }, RUN_SOLVE_MS);
     });
   }
 
@@ -989,6 +1092,24 @@
     var val = $('#liveRateVal');
     if (inp) inp.value = r;
     if (val) val.textContent = r;
+  }
+
+  /* 进度条直接取引擎的推进比例，不做缓动补偿：
+     演算本来就是按真实时间走的，条子跟着时间走才可信 */
+  function liveProgressUI(p, done) {
+    var fill = $('#liveProg');
+    if (!fill) return;
+    var v = Math.max(0, Math.min(1, p || 0));
+    fill.style.width = (v * 100).toFixed(1) + '%';
+    if (done) pulseEl($('#liveProgWrap'), 'ok');
+  }
+
+  function setKeepBtn(saved) {
+    var b = $('#btnKeep');
+    if (!b) return;
+    b.disabled = !!saved || !state.live.done;
+    b.textContent = saved ? '已加入报告' : '记入数据表';
+    b.classList.toggle('saved', !!saved);
   }
 
   function buildLiveRun(eng, snap) {
@@ -1052,12 +1173,15 @@
 
   function enableLive() {
     var L = state.live;
+    // 实时演算接管之后，排队中的"点运行求解"和待弹的完成提示都要撤掉
+    clearTimeout(runBusyTimer);
+    if (state.busy) setRunBusy(false);
+    state.pendingDone = null;
     L.on = true;
     document.body.classList.add('live-on');
     $('#btnLive').setAttribute('aria-checked', 'true');
     $('#liveSpeed').hidden = false;
     $('#liveState').className = 'live-state on';
-    $('#btnKeep').disabled = true;
     liveReset(true);          // 建引擎时顺带定下换算档位并刷新说明
     toast('实时演算已开启：结果不再预先算好，点 ▶ 逐步求解');
   }
@@ -1068,15 +1192,18 @@
     L.on = false;
     L.engine = null;
     L.done = false;
+    L.saved = false;
     // 绝对速率在不同模块意义不同，下次开启重新按模块自动挑档
     L.rate = null;
     L.rateAuto = true;
     document.body.classList.remove('live-on');
+    document.body.classList.remove('live-playing');
     $('#btnLive').setAttribute('aria-checked', 'false');
     $('#liveSpeed').hidden = true;
     $('#liveState').className = 'live-state';
     $('#liveState').textContent = '关闭时直接给出终值';
-    $('#btnKeep').disabled = true;
+    setKeepBtn(false);
+    liveProgressUI(0);
     if (restore !== false) {
       runSim({ preview: true, silent: true });
       toast('已关闭实时演算，恢复直接给出终值');
@@ -1091,6 +1218,7 @@
     state.live.engine = eng;
     state.live.tReal = 0;
     state.live.done = false;
+    state.live.saved = false;
     state.live.lastChart = 0;
     var snap = eng.snapshot();
     state.current = buildLiveRun(eng, snap);
@@ -1100,7 +1228,8 @@
     drawViz();
     renderProcessChart();
     $('#btnPlay').textContent = '▶';
-    $('#btnKeep').disabled = true;
+    setKeepBtn(false);
+    liveProgressUI(0);
     $('#liveState').className = 'live-state on';
     $('#liveState').textContent = '待开始 · 全程 ' + fmtNum(eng.tEnd, 0) + ' ' + liveUnit() +
       '（约 ' + fmtNum(liveSeconds(eng), 0) + ' s）';
@@ -1135,6 +1264,8 @@
     if (keep > 0.001 && !eng.done) eng.advance(keep * eng.tEnd);
     L.engine = eng;
     L.done = eng.done;
+    // 参数已经变了，上一条自动记录对应的是旧工况，得重新入表
+    L.saved = false;
     L.playing = wasPlaying && !eng.done;
     L.last = performance.now();
     L.lastChart = 0;
@@ -1148,9 +1279,10 @@
     renderProcessChart();
     syncRateUI();
     updateLiveMeta();
-    $('#btnKeep').disabled = !L.done;
+    liveProgressUI(snap.progress);
+    setKeepBtn(L.saved);
 
-    if (L.done) { finishLive(); return; }
+    if (L.done) { finishLive(false, silent); return; }
 
     $('#btnPlay').textContent = L.playing ? '❚❚' : '▶';
     $('#liveState').className = 'live-state on';
@@ -1168,6 +1300,7 @@
     if (!L.engine) return;
     L.playing = true;
     L.last = performance.now();
+    document.body.classList.add('live-playing');
     $('#btnPlay').textContent = '❚❚';
     $('#liveState').className = 'live-state on';
     L.raf = requestAnimationFrame(liveTick);
@@ -1176,6 +1309,7 @@
   function stopLive() {
     var L = state.live;
     L.playing = false;
+    document.body.classList.remove('live-playing');
     if (L.raf) cancelAnimationFrame(L.raf);
     L.raf = null;
     $('#btnPlay').textContent = '▶';
@@ -1194,6 +1328,7 @@
     L.tReal += dtReal;
     var eng = L.engine;
     eng.advance(dtReal * (L.rate || LIVE_RATE));   // 现实 1 s → 模拟 L.rate 分钟
+    liveProgressUI(eng.progress);
     // 切到数据/对比页时只推进求解，不重建快照也不重绘隐藏画布；切回实验台会补上一帧
     if (!isTabActive('bench')) {
       state.frame = eng.progress;
@@ -1221,10 +1356,15 @@
     L.raf = requestAnimationFrame(liveTick);
   }
 
-  function finishLive() {
+  /* 演算收尾：先定格画面与解读，再自动入表（与关闭实时时直接给终值的行为对齐），
+     最后给一次动效反馈，让「结果已定稿并进了报告」有明确的视觉落点。
+     autoSave 为 false 时不入表：参数刚改过、进度被保留着直接撞到终点的那种，
+     并不算一次新实验，硬记一条会刷出一串同工况记录。 */
+  function finishLive(autoSave, silent) {
     var L = state.live;
     L.playing = false;
     L.done = true;
+    document.body.classList.remove('live-playing');
     if (L.raf) cancelAnimationFrame(L.raf);
     L.raf = null;
     var eng = L.engine;
@@ -1235,20 +1375,46 @@
     updateHud();
     drawViz();
     renderProcessChart();
+    liveProgressUI(1, true);
     $('#btnPlay').textContent = '▶';
-    $('#btnKeep').disabled = false;
-    $('#liveState').className = 'live-state done';
-    $('#liveState').textContent = '演算完成 · 实时 ' + fmtNum(L.tReal, 1) + ' s';
-    $('#tabInfo').textContent = '实时演算完成 · 实时 ' + fmtNum(L.tReal, 1) + ' s · 已记录 ' + state.runs.length + ' 组';
     renderInsights();
     renderAdvice();
-    toast('实时演算完成 · 实时用时 ' + fmtNum(L.tReal, 1) + ' s');
+
+    if (autoSave === false) {
+      // 参数刚改过、进度被保留着直接撞到终点：不算一次新实验，勾也别给，
+      // 免得绿勾让人误以为已经进了报告
+      $('#liveState').className = 'live-state on';
+      $('#liveState').textContent = '已到终点 · 实时 ' + fmtNum(L.tReal, 1) + ' s · 可点「记入数据表」';
+      $('#tabInfo').textContent = '实时演算完成 · 已记录 ' + state.runs.length + ' 组';
+      setKeepBtn(false);
+      if (!silent) toast('参数已更新，演算停在终点 · 需要时点「记入数据表」');
+      return;
+    }
+
+    var run = saveLiveRun(true);
+    $('#liveState').className = 'live-state done';
+    $('#liveState').textContent = '演算成功 · 已加入报告 · 实时 ' + fmtNum(L.tReal, 1) + ' s';
+    $('#tabInfo').textContent = '演算成功 · 已加入报告 · 实时 ' + fmtNum(L.tReal, 1) +
+      ' s · 已记录 ' + state.runs.length + ' 组';
+    pulseEl($('#kpiRow'), 'ok-pulse');
+    toast('演算成功，已加入报告' + (run ? ' · ' + runLabel(run) : ''), 'ok');
   }
 
-  function keepLiveRun() {
-    var eng = state.live.engine;
-    if (!eng || !eng.done) return;
+  function saveLiveRun(silent) {
+    var L = state.live;
+    var eng = L.engine;
+    if (!eng || !eng.done) return null;
     var run = buildLiveRun(eng, eng.snapshot());
+    // 同一工况重播一遍不该再占一行数据：与末条参数完全一致时直接认领末条
+    var list = currentModuleRuns();
+    var last = list[list.length - 1];
+    if (last && last.variantId === run.variantId &&
+        JSON.stringify(last.params) === JSON.stringify(run.params)) {
+      L.saved = true;
+      setKeepBtn(true);
+      if (!silent) toast('该工况已在数据表中 · ' + runLabel(last));
+      return last;
+    }
     state.seq[state.moduleId] = (state.seq[state.moduleId] || 0) + 1;
     run.seq = state.seq[state.moduleId];
     run.id = 'R' + run.seq + '-LIVE';
@@ -1258,8 +1424,14 @@
     persistRuns();
     renderData();
     renderCompare();
-    $('#btnKeep').disabled = true;
-    toast('已记入数据表 · ' + runLabel(run));
+    L.saved = true;
+    setKeepBtn(true);
+    if (!silent) toast('已记入数据表 · ' + runLabel(run));
+    return run;
+  }
+
+  function keepLiveRun() {
+    saveLiveRun(false);
   }
 
   var PLAY_MS = 5200;
@@ -1300,6 +1472,7 @@
     if (state.frame >= 1) {
       stopPlay();
       if (!isTabActive('bench')) { updateHud(); drawViz(); renderProcessChart(); }
+      flushDoneDialog();
       return;
     }
     state.raf = requestAnimationFrame(tick);

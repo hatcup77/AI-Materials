@@ -275,13 +275,13 @@ html[data-theme="light"] .brand-mark .bm-light { display: none; }
 /* 主题切换 */
 .theme-switch {
   position: relative;
-  width: 52px;
-  height: 27px;
+  width: 56px;
+  height: 30px;
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 7px;
+  padding: 0 8px;
   border: 1px solid var(--line);
   border-radius: 20px;
   background: var(--fill-1);
@@ -303,13 +303,13 @@ html[data-theme="light"] .brand-mark .bm-light { display: none; }
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 21px;
-  height: 21px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: var(--accent-bg);
   transition: transform 0.24s cubic-bezier(0.34, 1.36, 0.5, 1);
 }
-html[data-theme="dark"] .theme-switch .ts-knob { transform: translateX(26px); }
+html[data-theme="dark"] .theme-switch .ts-knob { transform: translateX(28px); }
 html[data-theme="light"] .theme-switch .sun,
 html[data-theme="dark"] .theme-switch .moon { color: var(--accent-ink); text-shadow: none; }
 
@@ -361,7 +361,22 @@ html[data-theme="dark"] .theme-switch .moon { color: var(--accent-ink); text-sha
   display: grid;
   grid-template-columns: var(--left-w) minmax(0, 1fr) var(--right-w);
   transition: grid-template-columns 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: pageFade 0.26s ease;
 }
+/* 首屏只做淡入不做位移：画布第一帧本身就有内容跳出来，再叠位移会晃 */
+@keyframes pageFade { from { opacity: 0; } }
+
+/* 切模块时左栏参数、KPI 与卡片是整套换掉的，给一次很短的错峰淡入。
+   类由 app.js 挂 320ms 后摘掉，实时演算逐帧重建 KPI 时不会撞上。 */
+body.bench-enter .param-item,
+body.bench-enter .kpi,
+body.bench-enter .tab-body[data-body="bench"] .card { animation: benchIn 0.26s ease backwards; }
+body.bench-enter .kpi:nth-child(2) { animation-delay: 0.03s; }
+body.bench-enter .kpi:nth-child(3) { animation-delay: 0.06s; }
+body.bench-enter .kpi:nth-child(4) { animation-delay: 0.09s; }
+body.bench-enter .kpi:nth-child(5) { animation-delay: 0.12s; }
+body.bench-enter .kpi:nth-child(6) { animation-delay: 0.15s; }
+@keyframes benchIn { from { opacity: 0; transform: translateY(6px); } }
 
 .panel {
   min-height: 0;
@@ -453,16 +468,16 @@ body.ai-collapsed .ai-rail { display: flex; animation: railIn 0.28s ease; }
 
 .panel-head-right { display: flex; align-items: center; gap: 7px; }
 .ai-collapse {
-  width: 22px; height: 22px;
+  width: 30px; height: 30px;
   display: grid;
   place-items: center;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--fill-1);
   color: var(--txt2);
   font: inherit;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1;
   cursor: pointer;
   transition: all 0.18s ease;
@@ -577,6 +592,7 @@ select.mini-select { width: auto; min-width: 132px; padding: 5px 24px 5px 9px; f
 .param-q {
   appearance: none;
   -webkit-appearance: none;
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -600,6 +616,14 @@ select.mini-select { width: auto; min-width: 132px; padding: 5px 24px 5px 9px; f
   border-color: var(--cyan);
   background: rgba(61, 219, 232, 0.12);
 }
+/* 圆圈本身只有 13px，鼠标很难正好压中；用一层透明伪元素把命中区撑到 23px，
+   视觉不变，点起来轻松很多 */
+.param-q::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+}
 .param-val {
   font-size: 14px;
   font-weight: 600;
@@ -609,19 +633,26 @@ select.mini-select { width: auto; min-width: 132px; padding: 5px 24px 5px 9px; f
 }
 .param-val .u { font-size: 10.5px; color: var(--txt3); font-weight: 400; margin-left: 2px; }
 
+/* 轨道只有 4px 粗，但可点区域给到 18px：从上下任意位置按下去都能拖，
+   否则得把鼠标精确压在那条细线上 */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
+  height: 18px;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: 3px;
   background: var(--fill-6);
-  outline: none;
-  cursor: pointer;
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 13px; height: 13px;
+  margin-top: -4.5px;      /* 让 13px 的滑块压在 4px 轨道正中 */
   border-radius: 50%;
   background: var(--thumb);
   border: 2px solid var(--cyan);
@@ -630,6 +661,11 @@ input[type="range"]::-webkit-slider-thumb {
   transition: transform 0.12s;
 }
 input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.15); cursor: grabbing; }
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 3px;
+  background: var(--fill-6);
+}
 input[type="range"]::-moz-range-thumb {
   width: 12px; height: 12px; border-radius: 50%;
   background: var(--thumb); border: 2px solid var(--cyan); cursor: grab;
@@ -661,6 +697,7 @@ input[type="range"]::-moz-range-thumb {
   color: var(--cyan);
   background: rgba(61, 219, 232, 0.08);
 }
+.preset-btn:active { transform: translateY(1px); }
 
 /* 按钮 */
 .btn {
@@ -695,13 +732,16 @@ input[type="range"]::-moz-range-thumb {
 .btn.sm { padding: 6px 10px; font-size: 11.5px; }
 .btn.block { width: 100%; }
 .btn.icon {
-  width: 28px; height: 28px; padding: 0;
+  width: 32px; height: 32px; padding: 0;
   background: var(--fill-4);
   border: 1px solid var(--line);
   color: var(--txt2);
-  font-size: 11px;
+  font-size: 12px;
+  flex: none;
 }
 .btn.icon:hover { color: var(--cyan); border-color: rgba(61, 219, 232, 0.4); }
+/* 按下时整体沉 1px：幅度小到不觉得在动，但松手时能感觉到按钮"接住"了手指 */
+.btn:not(:disabled):active { transform: translateY(1px); }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .btn .ico { font-size: 12px; opacity: 0.8; }
 
@@ -711,8 +751,55 @@ input[type="range"]::-moz-range-thumb {
   font-size: 13.5px;
   letter-spacing: 1px;
   margin-top: 16px;
+  position: relative;
+  overflow: hidden;
 }
 .run-ico { font-size: 10px; }
+
+/* 求解中：图标换成转圈、文字换成"求解中"，按钮另有一道光扫过，
+   给的是"正在算"的实感，而不是卡住的错觉 */
+.run-spinner {
+  display: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  opacity: 0.85;
+  animation: runSpin 0.68s linear infinite;
+}
+.run-btn.is-busy { pointer-events: none; }
+.run-btn.is-busy .run-spinner { display: block; }
+.run-btn.is-busy .run-ico { display: none; }
+.run-btn.is-busy::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.34), transparent);
+  transform: translateX(-100%);
+  animation: runSweep 1s linear infinite;
+}
+@keyframes runSpin { to { transform: rotate(360deg); } }
+@keyframes runSweep { to { transform: translateX(100%); } }
+
+/* 求解期间旧结果整体虚掉：上一组的 KPI 与曲线不该被当成这一组的结果 */
+.viz-card canvas, .chart-card canvas { transition: filter 0.22s ease, opacity 0.22s ease; }
+.stage.solving #kpiRow .kpi { opacity: 0.4; }
+.stage.solving #kpiRow .k-val { filter: blur(3px); }
+.stage.solving #kpiRow .k-meta { opacity: 0.45; }
+.stage.solving .viz-card canvas,
+.stage.solving .chart-card canvas { filter: blur(2.4px); opacity: 0.45; }
+.stage.solving .insight-card { opacity: 0.35; }
+.stage.solving .viz-card { position: relative; overflow: hidden; }
+.stage.solving .viz-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 30%, rgba(61, 219, 232, 0.24) 50%, transparent 70%);
+  animation: vizScan 1.05s linear infinite;
+}
+@keyframes vizScan { from { transform: translateY(-100%); } to { transform: translateY(100%); } }
 .run-hint {
   font-size: 10.5px;
   color: var(--txt3);
@@ -760,7 +847,9 @@ input[type="range"]::-moz-range-thumb {
   height: 2px;
   border-radius: 2px;
   background: var(--cyan);
+  animation: tabBar 0.22s ease;
 }
+@keyframes tabBar { from { transform: scaleX(0.25); opacity: 0; } }
 .tab-info {
   margin-left: auto;
   font-size: 11px;
@@ -778,7 +867,9 @@ input[type="range"]::-moz-range-thumb {
   padding-top: 13px;
   padding-right: 3px;
 }
-.tab-body.active { display: block; }
+/* display 由 none 切到 block 会重触发动画，正好当页签的入场过渡用 */
+.tab-body.active { display: block; animation: tabIn 0.2s ease; }
+@keyframes tabIn { from { opacity: 0; transform: translateY(4px); } }
 
 /* KPI */
 .kpi-row {
@@ -928,7 +1019,7 @@ body[data-module="heat"] .viz-card .canvas-wrap { min-height: 318px; max-height:
   border: 1px solid var(--line);
   background: var(--fill-1);
   border-radius: 20px;
-  padding: 3px 11px 3px 4px;
+  padding: 6px 12px 6px 5px;
   cursor: pointer;
   font-family: var(--font);
   font-size: 11.5px;
@@ -959,15 +1050,113 @@ body[data-module="heat"] .viz-card .canvas-wrap { min-height: 318px; max-height:
 }
 .live-toggle[aria-checked="true"] .lt-track { background: rgba(61, 219, 232, 0.30); }
 .live-toggle[aria-checked="true"] .lt-track i { transform: translateX(12px); background: var(--cyan); }
+/* 进度条：实时演算时显示，宽度直接反映求解推进到哪一步；
+   扫光只在真正播放时走，暂停时停住，避免"还在算"的假象 */
+.live-prog {
+  position: relative;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--fill-6);
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.2s;
+  margin-bottom: 2px;
+}
+body.live-on .live-prog { opacity: 1; }
+.live-prog i {
+  position: relative;
+  display: block;
+  height: 100%;
+  width: 0%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--cyan), var(--green));
+  transition: width 0.1s linear, background 0.3s;
+}
+.live-prog i::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: translateX(-100%);
+  opacity: 0;
+}
+body.live-playing .live-prog i::after {
+  opacity: 1;
+  animation: liveSweep 1.25s linear infinite;
+}
+.live-prog.ok { animation: liveOkRing 0.8s ease-out; }
+@keyframes liveSweep { to { transform: translateX(100%); } }
+@keyframes liveOkRing {
+  0% { box-shadow: 0 0 0 0 rgba(102, 227, 160, 0.55); }
+  100% { box-shadow: 0 0 0 7px rgba(102, 227, 160, 0); }
+}
+
 .live-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 10.5px;
   color: var(--txt3);
   font-variant-numeric: tabular-nums;
+  padding: 2px 7px 2px 5px;
+  border-radius: 20px;
+  transition: color 0.2s, background 0.2s;
+}
+/* 状态点：待机灰点、求解中青色呼吸、完成变绿勾 */
+.live-state::before {
+  content: '';
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
 }
 .live-state.on { color: var(--cyan); }
-.live-state.done { color: var(--green); }
+.live-state.on::before {
+  width: 6px;
+  height: 6px;
+  opacity: 1;
+  animation: livePulse 1.15s ease-in-out infinite;
+}
+.live-state.done {
+  color: var(--green);
+  background: rgba(102, 227, 160, 0.12);
+  animation: liveOkIn 0.42s cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+.live-state.done::before {
+  content: '✓';
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 1;
+  animation: liveTick 0.5s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+@keyframes livePulse {
+  0%, 100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(154, 215, 222, 0.5); }
+  50% { transform: scale(0.82); opacity: 0.6; box-shadow: 0 0 0 3px rgba(154, 215, 222, 0); }
+}
+@keyframes liveOkIn { from { transform: scale(0.94); opacity: 0.4; } }
+@keyframes liveTick { from { transform: scale(0.2); opacity: 0; } }
+/* 完成瞬间 KPI 卡片一起闪一下绿边，把"结果已经定稿"的信号给足 */
+#kpiRow.ok-pulse .kpi { animation: kpiOkFlash 0.85s ease-out; }
+@keyframes kpiOkFlash {
+  0% { border-color: rgba(102, 227, 160, 0.7); box-shadow: 0 0 0 1px rgba(102, 227, 160, 0.22) inset; }
+  100% { border-color: var(--line); box-shadow: none; }
+}
 .live-keep { margin-left: auto; }
 .live-keep:disabled { opacity: 0.4; cursor: default; }
+/* 已入表：按钮常亮成"已完成"的样式，不再只是灰掉 */
+.live-keep.saved {
+  opacity: 0.85;
+  color: var(--green);
+  border-color: rgba(102, 227, 160, 0.35);
+  background: rgba(102, 227, 160, 0.08);
+}
 .live-speed { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .live-speed[hidden] { display: none; }
 .ls-label { font-size: 10.5px; color: var(--txt3); white-space: nowrap; }
@@ -975,7 +1164,7 @@ body[data-module="heat"] .viz-card .canvas-wrap { min-height: 318px; max-height:
   flex: 1 1 80px;
   min-width: 68px;
   max-width: 190px;
-  height: 4px;
+  height: 18px;
 }
 .ls-rate-val {
   min-width: 20px;
@@ -1017,7 +1206,7 @@ body.live-on .time-read { color: var(--cyan); }
   color: var(--txt3);
   border: 1px solid var(--line);
   border-radius: 20px;
-  padding: 3px 9px;
+  padding: 5px 10px;
   cursor: pointer;
   background: transparent;
   transition: all 0.15s;
@@ -1314,7 +1503,9 @@ table.grid-table td.col-actions { z-index: 3; }
   line-height: 1.78;
   word-break: break-word;
   white-space: pre-wrap;
+  animation: msgIn 0.2s ease;
 }
+@keyframes msgIn { from { opacity: 0; transform: translateY(4px); } }
 .ai-msg.user {
   align-self: flex-end;
   max-width: 90%;
@@ -1564,7 +1755,8 @@ table.grid-table td.col-actions { z-index: 3; }
   z-index: 100;
   padding: 24px;
 }
-.modal.open { display: flex; }
+.modal.open { display: flex; animation: scrimIn 0.18s ease; }
+@keyframes scrimIn { from { opacity: 0; } }
 .modal-card {
   width: min(1000px, 94vw);
   max-height: 88vh;
@@ -1578,6 +1770,89 @@ table.grid-table td.col-actions { z-index: 3; }
   animation: modalIn 0.22s ease;
 }
 @keyframes modalIn { from { opacity: 0; transform: translateY(12px) scale(0.99); } }
+
+/* ------------------------- 完成提示弹窗 ------------------------- */
+/* 只报一件事：这一组算完了、已经进表。所以卡片窄、文字少、按钮两个 */
+.done-card {
+  width: min(400px, calc(100vw - 40px));
+  align-items: center;
+  text-align: center;
+  padding: 26px 24px 20px;
+  overflow: visible;
+}
+.done-card:focus { outline: none; }
+.done-badge {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(102, 227, 160, 0.1);
+  padding: 7px;
+  margin-bottom: 13px;
+  display: grid;
+  place-items: center;
+  animation: badgePop 0.42s cubic-bezier(0.2, 1.3, 0.4, 1);
+}
+.done-badge svg { width: 100%; height: 100%; display: block; }
+.done-ring {
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 2.2;
+  stroke-dasharray: 139;
+  stroke-dashoffset: 139;
+  animation: ringDraw 0.55s 0.06s ease-out forwards;
+}
+.done-tick {
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 3.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 34;
+  stroke-dashoffset: 34;
+  animation: tickDraw 0.26s 0.44s ease-out forwards;
+}
+@keyframes badgePop { from { transform: scale(0.6); opacity: 0; } }
+@keyframes ringDraw { to { stroke-dashoffset: 0; } }
+@keyframes tickDraw { to { stroke-dashoffset: 0; } }
+
+.done-title { margin: 0 0 6px; font-size: 17px; font-weight: 600; letter-spacing: 0.5px; color: var(--txt); }
+.done-sub { margin: 0 0 15px; font-size: 11.5px; color: var(--txt3); line-height: 1.6; }
+.done-stats { display: flex; gap: 8px; width: 100%; margin-bottom: 13px; }
+.done-stat {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 9px 7px 8px;
+  background: var(--fill-1);
+  animation: statIn 0.32s ease backwards;
+}
+.done-stat:nth-child(2) { animation-delay: 0.07s; }
+.done-stat:nth-child(3) { animation-delay: 0.14s; }
+@keyframes statIn { from { opacity: 0; transform: translateY(6px); } }
+.done-stat .ds-label {
+  display: block;
+  font-size: 9.5px;
+  color: var(--txt3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.done-stat .ds-val {
+  display: block;
+  margin-top: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--txt);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.done-stat .ds-val small { font-size: 9.5px; font-weight: 400; color: var(--txt3); margin-left: 2px; }
+.done-note { margin: 0 0 17px; font-size: 10.8px; color: var(--txt3); line-height: 1.75; }
+.done-actions { display: flex; gap: 8px; width: 100%; }
+.done-actions .btn { flex: 1; }
 .modal-head {
   display: flex;
   align-items: center;
@@ -1593,8 +1868,8 @@ table.grid-table td.col-actions { z-index: 3; }
   background: var(--fill-4);
   border: 1px solid var(--line);
   color: var(--txt2);
-  width: 26px; height: 26px;
-  border-radius: 7px;
+  width: 30px; height: 30px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 12px;
   line-height: 1;
@@ -1721,7 +1996,7 @@ table.grid-table td.col-actions { z-index: 3; }
   color: var(--txt2);
   font-family: var(--font);
   font-size: 11.5px;
-  padding: 4px 10px;
+  padding: 6px 11px;
   border-radius: 7px;
   cursor: pointer;
   transition: all 0.15s;
@@ -1838,7 +2113,8 @@ table.grid-table td.col-actions { z-index: 3; }
   padding-top: 9px;
   border-top: 1px dashed var(--line);
 }
-.gl-item.open .gl-detail { display: block; }
+.gl-item.open .gl-detail { display: block; animation: detailIn 0.18s ease; }
+@keyframes detailIn { from { opacity: 0; transform: translateY(-3px); } }
 
 /* 术语配图：展开后显示，随主题变量换色 */
 .gl-fig {
@@ -1991,6 +2267,7 @@ table.grid-table td.col-actions { z-index: 3; }
   line-height: 1.55;
 }
 .toast.warn { border-left-color: var(--amber); border-color: rgba(255, 179, 71, 0.3); }
+.toast.ok { border-left-color: var(--green); border-color: rgba(102, 227, 160, 0.34); }
 @keyframes toastIn { from { opacity: 0; transform: translateX(16px); } }
 .toast.out { opacity: 0; transform: translateX(16px); transition: all 0.3s; }
 
@@ -2129,7 +2406,7 @@ table.grid-table td.col-actions { z-index: 3; }
   font-size: 14px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  padding: 0 3px;
+  padding: 3px 4px;
   transition: border-color 0.14s, background 0.14s;
 }
 .param-num:hover { border-color: var(--line2); }
@@ -2212,9 +2489,10 @@ table.grid-table td.col-actions { z-index: 3; }
   color: var(--txt3);
   font-family: var(--font);
   font-size: 10px;
-  padding: 1px 6px;
-  border-radius: 4px;
+  padding: 4px 8px;
+  border-radius: 5px;
   cursor: pointer;
+  line-height: 1.2;
 }
 .ai-mini-btn:hover { color: var(--cyan); border-color: rgba(61, 219, 232, 0.35); }
 .ai-data-notice {
