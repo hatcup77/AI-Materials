@@ -1,5 +1,7 @@
 /* Homepage */
 body.home { overflow: auto; background: var(--bg); }
+/* 锚点跳转用平滑滚动：hero 占据首屏时，「选择实验」按钮的下滚反馈才看得见 */
+body.home { scroll-behavior: smooth; }
 .home-container { width: min(1240px, calc(100% - 80px)); margin-inline: auto; }
 .home-topbar { height: auto; padding: 0; }
 .home-nav { min-height: 70px; display: flex; justify-content: space-between; align-items: center; gap: 14px; }
@@ -7,7 +9,8 @@ body.home { overflow: auto; background: var(--bg); }
 .home-topbar .btn.ghost:hover { background: var(--accent-soft); }
 .home-topbar .home-lab-link { border-color: var(--line); }
 .home-topbar .top-right { flex-wrap: nowrap; }
-.hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr); gap: clamp(24px, 4vw, 66px); align-items: center; padding: 56px 0 42px; }
+/* hero 撑满首屏：视口高度足够时，点「选择实验」会真的下滚一屏而不是原地踏步 */
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr); gap: clamp(24px, 4vw, 66px); align-items: center; padding: 56px 0 42px; min-height: calc(100vh - 70px); box-sizing: border-box; }
 .hero-eyebrow { color: var(--cyan); font-size: 13px; font-weight: 650; display: flex; align-items: center; gap: 8px; }
 .hero-eyebrow > span { background: var(--cyan); width: 7px; height: 7px; border-radius: 50%; }
 .hero h1 { margin: 19px 0 16px; font-size: clamp(40px, 4.15vw, 65px); line-height: 1.13; letter-spacing: -.055em; font-weight: 750; }
@@ -71,7 +74,7 @@ html[data-theme="dark"] .hero-art figcaption { border-color: #40665a; }
 }
 @media (max-width: 760px) {
   .home-container { width: calc(100% - 32px); }
-  .hero { grid-template-columns: 1fr; gap: 26px; padding-block: 34px 27px; }
+  .hero { grid-template-columns: 1fr; gap: 26px; padding-block: 34px 27px; min-height: 0; }
   .hero h1 { font-size: clamp(38px, 8vw, 55px); margin-block: 13px 11px; }
   .hero-actions { margin-top: 19px; }
   .hero-facts { margin-top: 18px; }
