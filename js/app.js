@@ -570,11 +570,16 @@
       var dg = useLog ? dynDigits(cur) : digitsOf(d);
       var gid = paramGlossId(d.key);
       var gt = gid && window.GLOSSARY ? window.GLOSSARY.byId[gid] : null;
+      var heading = '<span class="param-name">' + d.label +
+        (gt ? '<button class="param-q" data-gloss="' + gid + '" title="术语：' + gt.zh + '" aria-label="查看术语：' + gt.zh + '">?</button>' : '') +
+        '</span>';
+      if (d.choices) {
+        buildParamChoices(item, d, heading, cur);
+        box.appendChild(item);
+        return;
+      }
       item.innerHTML =
-        '<div class="param-top">' +
-          '<span class="param-name">' + d.label +
-            (gt ? '<button class="param-q" data-gloss="' + gid + '" title="术语：' + gt.zh + '" aria-label="查看术语：' + gt.zh + '">?</button>' : '') +
-          '</span>' +
+        '<div class="param-top">' + heading +
           '<span class="param-val"><input class="v param-num" type="text" inputmode="decimal" ' +
             'value="' + cur.toFixed(dg) + '" title="点击输入精确数值，回车生效" ' +
             'aria-label="' + d.label + '精确数值">' +
@@ -629,6 +634,29 @@
     updateMaterialNote();
   }
 
+  function buildParamChoices(item, def, heading, value) {
+    item.innerHTML = '<div class="param-top">' + heading + '</div>' +
+      '<div class="param-choices" role="radiogroup" aria-label="' + def.label + '">' +
+      def.choices.map(function (label, index) {
+        return '<label class="param-choice"><input type="radio" name="param-' + def.key + '" value="' + index + '">' +
+          '<span>' + label + '</span></label>';
+      }).join('') + '</div><div class="param-hint">' + def.hint + '</div>';
+    syncParamChoices(item, value);
+    item.addEventListener('change', function (e) {
+      state.params[def.key] = Number(e.target.value);
+      persistParams();
+      if (state.live.on) liveResetSoon();
+      else schedulePreview(0);
+    });
+  }
+
+  function syncParamChoices(item, value) {
+    // 与热处理模型的气氛取整规则一致，兼容旧记录和寻优给出的数值。
+    $$('input[type="radio"]', item).forEach(function (input) {
+      input.checked = Number(input.value) === Math.round(value);
+    });
+  }
+
   function paintRange(input) {
     var min = parseFloat(input.min), max = parseFloat(input.max), v = parseFloat(input.value);
     var pct = ((v - min) / (max - min)) * 100;
@@ -639,6 +667,7 @@
     $$('#paramList .param-item').forEach(function (item) {
       var key = item.dataset.key;
       var def = paramDef(key);
+      if (def && def.choices) { syncParamChoices(item, state.params[key]); return; }
       var input = $('.param-range', item);
       var useLog = !!(def && def.log);
       var dg = useLog ? dynDigits(state.params[key]) : digitsOf(def);

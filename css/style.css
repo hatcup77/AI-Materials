@@ -635,6 +635,30 @@ select.mini-select { width: auto; min-width: 132px; padding: 5px 24px 5px 9px; f
 }
 .param-val .u { font-size: 10.5px; color: var(--txt3); font-weight: 400; margin-left: 2px; }
 
+.param-choices { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; }
+.param-choice { position: relative; min-width: 0; cursor: pointer; }
+.param-choice input { position: absolute; opacity: 0; }
+.param-choice span {
+  display: grid;
+  place-items: center;
+  min-height: 38px;
+  padding: 4px;
+  border: 1px solid var(--line2);
+  border-radius: 7px;
+  background: var(--fill-1);
+  color: var(--txt2);
+  font-size: 12px;
+  text-align: center;
+}
+.param-choice:hover span { border-color: var(--cyan); }
+.param-choice input:checked + span {
+  border-color: var(--accent-bg);
+  background: var(--accent-bg);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.param-choice input:focus-visible + span { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
 /* 轨道只有 4px 粗，但可点区域给到 18px：从上下任意位置按下去都能拖，
    否则得把鼠标精确压在那条细线上 */
 input[type="range"] {
