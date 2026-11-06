@@ -39,6 +39,7 @@
     sens: null,
     runMs: 0,
     previewTimer: null,
+    vizDrag: null,
     busy: false,            // 「运行仿真」的求解动画进行中
     pendingDone: null       // 已算完、等回放走到结尾再弹完成提示的那一组
   };
@@ -313,57 +314,79 @@
     bindVizDrag();
   }
 
-  /* 炉膛里直接拖动样品：把「位置」从滑块变成一个可以上手的东西 */
+  /* 拖动时只更新画面，放手后才应用参数并重新求解。 */
+  function cancelVizDrag() {
+    var drag = state.vizDrag;
+    if (!drag) return;
+    state.vizDrag = null;
+    if (drag.raf !== null) cancelAnimationFrame(drag.raf);
+    drag.canvas.style.cursor = '';
+    if (drag.canvas.hasPointerCapture(drag.id)) drag.canvas.releasePointerCapture(drag.id);
+  }
+
   function bindVizDrag() {
     var cv = $('#vizCanvas');
     if (!cv) return;
-    var dragging = false;
     function local(e) {
-      var r = cv.getBoundingClientRect();
-      return { x: e.clientX - r.left, y: e.clientY - r.top };
+      var rect = cv.getBoundingClientRect();
+      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    }
+    function position(drag, e) {
+      var field = state.current && state.current.field;
+      var q = local(e);
+      return field && field.toPos && field.toPos(q.x - drag.offset.x, q.y - drag.offset.y);
     }
     cv.addEventListener('pointerdown', function (e) {
-      // 能不能拖动由模块的场对象决定：只有实现了 hitTest / toPos 的场才响应，
-      // 这样新增实验想支持拖动，在自己的场里补这两个方法即可。
-      var f = state.current && state.current.field;
-      if (!f || !f.hitTest) return;
+      var field = state.current && state.current.field;
+      if (state.vizDrag || state.busy || !e.isPrimary || e.button !== 0 || !field || !field.grabOffset) return;
       var q = local(e);
-      if (!f.hitTest(q.x, q.y)) return;
-      dragging = true;
-      f._drag = true;
-      try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+      var offset = field.grabOffset(q.x, q.y, e.pointerType === 'touch');
+      if (!offset) return;
+      cv.setPointerCapture(e.pointerId);
+      state.vizDrag = { canvas: cv, id: e.pointerId, offset: offset,
+        startX: e.clientX, startY: e.clientY, pos: null, raf: null };
       cv.style.cursor = 'grabbing';
-      // 实时演算时不要停播：位置变化走软重置，演算继续往前推
-      if (!state.live.on) stopPlay();
+      if (!state.live.on && state.playing) stopPlay();
       e.preventDefault();
     });
     cv.addEventListener('pointermove', function (e) {
-      var f = state.current && state.current.field;
-      if (!f || !f.toPos) return;
-      var q = local(e);
-      if (!dragging) {
-        cv.style.cursor = f.hitTest && f.hitTest(q.x, q.y) ? 'grab' : '';
-        f._hover = !!(f.hitTest && f.hitTest(q.x, q.y));
+      var drag = state.vizDrag;
+      if (!drag) {
+        var field = state.current && state.current.field;
+        var q = local(e);
+        cv.style.cursor = field && field.grabOffset && field.grabOffset(q.x, q.y) ? 'grab' : '';
         return;
       }
-      var pos = f.toPos(q.x, q.y);
-      if (!pos) return;
-      state.params.sx = Math.round(pos.sx);
-      state.params.sy = Math.round(pos.sy);
-      syncParamInputs();
-      if (state.live.on) liveResetSoon();
-      else schedulePreview(50);
+      if (e.pointerId !== drag.id) return;
+      drag.event = e;
+      if (drag.raf !== null) return;
+      drag.raf = requestAnimationFrame(function () {
+        drag.raf = null;
+        drag.pos = position(drag, drag.event);
+        drawViz();
+      });
     });
-    function end(e) {
-      if (!dragging) return;
-      dragging = false;
-      if (state.current && state.current.field) state.current.field._drag = false;
-      cv.style.cursor = 'grab';
-      try { cv.releasePointerCapture(e.pointerId); } catch (err) {}
+    function finish(e) {
+      var drag = state.vizDrag;
+      if (!drag || e.pointerId !== drag.id) return;
+      var released = e.type === 'pointerup';
+      var pos = released && (drag.event || e.clientX !== drag.startX || e.clientY !== drag.startY)
+        ? position(drag, e) : null;
+      cancelVizDrag();
+      var sx = pos && Math.round(pos.sx), sy = pos && Math.round(pos.sy);
+      if (!pos || (sx === state.params.sx && sy === state.params.sy)) { drawViz(); return; }
+      state.params.sx = sx;
+      state.params.sy = sy;
+      clearTimeout(state.previewTimer);
+      clearTimeout(liveTimer);
+      syncParamInputs();
+      persistParams();
+      runSim({ preview: true, keepFrame: true, silent: true });
     }
-    cv.addEventListener('pointerup', end);
-    cv.addEventListener('pointercancel', end);
-    cv.addEventListener('pointerleave', function () { cv.style.cursor = ''; });
+    cv.addEventListener('pointerup', finish);
+    cv.addEventListener('pointercancel', finish);
+    cv.addEventListener('lostpointercapture', finish);
+    cv.addEventListener('pointerleave', function () { if (!state.vizDrag) cv.style.cursor = ''; });
   }
 
   function buildModuleSwitch() {
@@ -391,6 +414,7 @@
   }
 
   function selectModule(id) {
+    cancelVizDrag();
     clearTimeout(state.previewTimer);
     if (state.live.on) disableLive(false);
     // 先收下当前模块的调参与对比选择，再切走；学生查完别的模块回来不用重调
@@ -488,6 +512,7 @@
     }).join('');
     sel.value = state.variantId;
     sel.onchange = function () {
+      cancelVizDrag();
       var oldV = Sim.findVariant(M, state.variantId);
       state.variantId = sel.value;
       var newV = Sim.findVariant(M, sel.value);
@@ -1005,7 +1030,7 @@
     var run = state.current;
     if (run && run.field) {
       var prog = (run.live && run.fieldProg != null) ? run.fieldProg : state.frame;
-      run.field.draw(ctx, rect.width, rect.height, prog);
+      run.field.draw(ctx, rect.width, rect.height, prog, state.vizDrag && state.vizDrag.pos);
     } else {
       ctx.fillStyle = cssVar('--canvas-bg', '#050a12');
       ctx.fillRect(0, 0, rect.width, rect.height);
@@ -1656,6 +1681,7 @@
 
   /* ----------------------------- 对比分析 ----------------------------- */
   function showTab(name, focus) {
+    if (name !== 'bench') cancelVizDrag();
     var target = $('#mainTabs [data-tab="' + name + '"]');
     $$('#mainTabs .tab').forEach(function (t) {
       var active = t === target;

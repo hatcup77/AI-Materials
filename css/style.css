@@ -957,6 +957,7 @@ input[type="range"]::-moz-range-thumb {
 .viz-card { display: flex; flex-direction: column; }
 .viz-card .canvas-wrap { flex: 1; min-height: 252px; height: auto; }
 body[data-module="kiln"] .viz-card .canvas-wrap { min-height: 300px; max-height: 340px; }
+body[data-module="kiln"] #vizCanvas { touch-action: none; }
 body[data-module="heat"] .viz-card .canvas-wrap { min-height: 318px; max-height: 358px; }
 
 .canvas-wrap {

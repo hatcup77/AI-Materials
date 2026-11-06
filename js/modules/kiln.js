@@ -342,14 +342,13 @@
       uniform: ctx.uniform, TsMax: ctx.TsMax, gap: ctx.gap,
       _cv: null,
       _sample: null,
-      _chamber: null,
-      _hover: false,
-      _drag: false
+      _travel: null,
+      _furnace: null
     };
 
     function fmt(v, d) { return (Math.round(v * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d); }
 
-    st.draw = function (c2, W, H, prog) {
+    st.draw = function (c2, W, H, prog, dragPos) {
       var lt = themeLight();
       var idx = Math.min(st.time.length - 1, Math.max(0, Math.round(prog * (st.time.length - 1))));
       var tNow = st.time[idx];
@@ -378,135 +377,161 @@
       var inY = bodyY + shell + insul;
       var inW = bodyW - doorW - (shell + insul) * 2;
       var inH = bodyH - (shell + insul) * 2;
-      st._chamber = { x: inX, y: inY, w: inW, h: inH };
 
       /* ---------- 顶部边界条件说明 ---------- */
       var bw = { left: st.T0 + (Tpg - st.T0) * KILN_GEO.left, top: st.T0 + (Tpg - st.T0) * KILN_GEO.top,
                  bottom: st.T0 + (Tpg - st.T0) * KILN_GEO.bottom, door: st.T0 + (Tpg - st.T0) * (KILN_GEO.right - KILN_GEO.doorEdge) };
 
-      /* ---------- 炉体 ---------- */
-      rrect(c2, bodyX, bodyY, bodyW, bodyH, 6);
-      c2.fillStyle = cShell; c2.fill();
-      c2.strokeStyle = cLine; c2.lineWidth = 1; c2.stroke();
+      // 炉体与等温线不随样品移动；位置预览直接复用同一帧的底图。
+      var dpr = c2.getTransform().a;
+      var layer = st._furnace;
+      if (!layer || layer.w !== W || layer.h !== bodyH || layer.dpr !== dpr ||
+          layer.temp !== Tpg || layer.light !== lt) {
+        var pixelsW = Math.ceil(W * dpr), pixelsH = Math.ceil((bodyY + bodyH + 2) * dpr);
+        var surface = layer ? layer.canvas : docCreateCanvas(pixelsW, pixelsH);
+        if (surface.width !== pixelsW) surface.width = pixelsW;
+        if (surface.height !== pixelsH) surface.height = pixelsH;
+        var surfaceCtx = surface.getContext('2d');
+        surfaceCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        surfaceCtx.clearRect(0, 0, pixelsW / dpr, pixelsH / dpr);
+        paintFurnace(surfaceCtx);
+        layer = st._furnace = { canvas: surface, w: W, h: bodyH, dpr: dpr, temp: Tpg, light: lt };
+      }
+      c2.drawImage(layer.canvas, 0, 0, layer.canvas.width / dpr, layer.canvas.height / dpr);
 
-      rrect(c2, bodyX + shell, bodyY + shell, bodyW - shell * 2, bodyH - shell * 2, 4);
-      c2.fillStyle = cInsul; c2.fill();
+      function paintFurnace(c2) {
+        /* ---------- 炉体 ---------- */
+        rrect(c2, bodyX, bodyY, bodyW, bodyH, 6);
+        c2.fillStyle = cShell; c2.fill();
+        c2.strokeStyle = cLine; c2.lineWidth = 1; c2.stroke();
 
-      /* ---------- 炉膛温度场 ---------- */
-      var qAbsScale = 1100;
-      var tMin = st.T0 + (Tpg - st.T0) * G.min;
-      var tMax = st.T0 + (Tpg - st.T0) * G.max;
-      var span = Math.max(1e-6, tMax - tMin);
+        rrect(c2, bodyX + shell, bodyY + shell, bodyW - shell * 2, bodyH - shell * 2, 4);
+        c2.fillStyle = cInsul; c2.fill();
 
-      if (!st._cv) st._cv = docCreateCanvas(nx, ny);
-      var cv = st._cv, c3 = cv.getContext('2d');
-      var img = c3.createImageData(nx, ny);
-      var d = img.data;
-      for (var j = 0; j < ny; j++) {
-        for (var i = 0; i < nx; i++) {
-          var T = st.T0 + (Tpg - st.T0) * G.F[j * nx + i];
-          var qAbs = clamp((T - 25) / qAbsScale, 0, 1);
-          var qRel = Math.pow(clamp((T - tMin) / span, 0, 1), 0.82);
-          var col = fireRamp(0.48 * qAbs + 0.52 * qRel);
-          var o = ((ny - 1 - j) * nx + i) * 4;
-          d[o] = col[0]; d[o + 1] = col[1]; d[o + 2] = col[2]; d[o + 3] = 255;
+        /* ---------- 炉膛温度场 ---------- */
+        var qAbsScale = 1100;
+        var tMin = st.T0 + (Tpg - st.T0) * G.min;
+        var tMax = st.T0 + (Tpg - st.T0) * G.max;
+        var span = Math.max(1e-6, tMax - tMin);
+
+        if (!st._cv) st._cv = docCreateCanvas(nx, ny);
+        var cv = st._cv, c3 = cv.getContext('2d');
+        var img = c3.createImageData(nx, ny);
+        var d = img.data;
+        for (var j = 0; j < ny; j++) {
+          for (var i = 0; i < nx; i++) {
+            var T = st.T0 + (Tpg - st.T0) * G.F[j * nx + i];
+            var qAbs = clamp((T - 25) / qAbsScale, 0, 1);
+            var qRel = Math.pow(clamp((T - tMin) / span, 0, 1), 0.82);
+            var col = fireRamp(0.48 * qAbs + 0.52 * qRel);
+            var o = ((ny - 1 - j) * nx + i) * 4;
+            d[o] = col[0]; d[o + 1] = col[1]; d[o + 2] = col[2]; d[o + 3] = 255;
+          }
         }
-      }
-      c3.putImageData(img, 0, 0);
-      c2.save();
-      c2.beginPath(); c2.rect(inX, inY, inW, inH); c2.clip();
-      c2.imageSmoothingEnabled = true;
-      c2.drawImage(cv, inX, inY, inW, inH);
-      c2.restore();
+        c3.putImageData(img, 0, 0);
+        c2.save();
+        c2.beginPath(); c2.rect(inX, inY, inW, inH); c2.clip();
+        c2.imageSmoothingEnabled = true;
+        c2.drawImage(cv, inX, inY, inW, inH);
+        c2.restore();
 
-      /* ---------- 等温线 ---------- */
-      c2.save();
-      c2.beginPath(); c2.rect(inX, inY, inW, inH); c2.clip();
-      for (var ci = 1; ci <= 4; ci++) {
-        var lv = tMin + span * ci / 5;
-        c2.setLineDash([5, 4]);
+        /* ---------- 等温线 ---------- */
+        c2.save();
+        c2.beginPath(); c2.rect(inX, inY, inW, inH); c2.clip();
+        for (var ci = 1; ci <= 4; ci++) {
+          var lv = tMin + span * ci / 5;
+          c2.setLineDash([5, 4]);
+          c2.lineWidth = 2.6;
+          c2.strokeStyle = 'rgba(30,10,4,0.22)';
+          contour(c2, G, lv, st.T0, Tpg, inX, inY, inW, inH);
+          c2.lineWidth = 1.1;
+          c2.strokeStyle = 'rgba(255,250,240,0.62)';
+          contour(c2, G, lv, st.T0, Tpg, inX, inY, inW, inH);
+          c2.setLineDash([]);
+        }
+        c2.restore();
+
+        /* ---------- 内腔描边 ---------- */
+        c2.strokeStyle = lt ? 'rgba(30,70,120,0.28)' : 'rgba(160,200,245,0.30)';
+        c2.lineWidth = 1;
+        c2.strokeRect(inX + 0.5, inY + 0.5, inW - 1, inH - 1);
+
+        /* ---------- 加热元件（左 / 顶 / 底） ---------- */
+        var heat = clamp((Tpg - st.T0) / Math.max(1, st.p.Tset - st.T0), 0, 1);
+        var glow = 0.25 + 0.75 * heat;
+        c2.lineCap = 'round';
+        c2.shadowBlur = 10 * glow;
+        c2.shadowColor = 'rgba(255,110,40,' + (0.55 * glow).toFixed(2) + ')';
+        c2.strokeStyle = 'rgba(255,' + Math.round(90 + 110 * heat) + ',' + Math.round(40 + 60 * heat) + ',' + (0.5 + 0.45 * heat).toFixed(2) + ')';
+        c2.lineWidth = 2.4;
+        // 左壁螺旋
+        c2.beginPath();
+        for (var yy = inY + 6; yy <= inY + inH - 6; yy += 9) {
+          c2.moveTo(inX + 1.6, yy);
+          c2.lineTo(inX + 6.2, yy + 4.5);
+        }
+        c2.stroke();
+        // 顶部 / 底部加热带
+        c2.lineWidth = 1.3;
+        c2.beginPath();
+        c2.moveTo(inX + 8, inY + 3.2); c2.lineTo(inX + inW - 8, inY + 3.2);
+        c2.moveTo(inX + 8, inY + inH - 3.2); c2.lineTo(inX + inW - 8, inY + inH - 3.2);
+        c2.stroke();
         c2.lineWidth = 2.6;
-        c2.strokeStyle = 'rgba(30,10,4,0.22)';
-        contour(c2, G, lv, st.T0, Tpg, inX, inY, inW, inH);
-        c2.lineWidth = 1.1;
-        c2.strokeStyle = 'rgba(255,250,240,0.62)';
-        contour(c2, G, lv, st.T0, Tpg, inX, inY, inW, inH);
-        c2.setLineDash([]);
+        c2.beginPath();
+        for (var xx = inX + 10; xx <= inX + inW - 10; xx += 11) {
+          c2.moveTo(xx, inY + 1.4); c2.lineTo(xx, inY + 5.4);
+          c2.moveTo(xx, inY + inH - 1.4); c2.lineTo(xx, inY + inH - 5.4);
+        }
+        c2.stroke();
+        c2.shadowBlur = 0;
+
+        /* ---------- 炉门 ---------- */
+        var dx = bodyX + bodyW - doorW - shell;
+        var dy0 = bodyY + shell, dh = bodyH - shell * 2;
+        // 门缝冷流（先画，压在门后）
+        c2.save();
+        var grd = c2.createLinearGradient(dx - 30, 0, dx + 1, 0);
+        grd.addColorStop(0, 'rgba(70,140,235,0)');
+        grd.addColorStop(1, lt ? 'rgba(30,105,200,0.38)' : 'rgba(110,185,255,0.34)');
+        c2.fillStyle = grd;
+        c2.fillRect(dx - 30, dy0 + 2, 31, dh - 4);
+        c2.restore();
+
+        c2.fillStyle = lt ? '#aebdd2' : '#28374c';
+        rrect(c2, dx, dy0, doorW, dh, 3); c2.fill();
+        c2.strokeStyle = lt ? 'rgba(30,70,120,0.35)' : 'rgba(150,190,240,0.30)';
+        c2.lineWidth = 1; c2.stroke();
+        // 门扇内衬
+        c2.fillStyle = lt ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.06)';
+        rrect(c2, dx + 3, dy0 + 5, doorW - 6, dh - 10, 2); c2.fill();
+        // 把手
+        c2.fillStyle = lt ? '#6c8098' : '#5d708a';
+        rrect(c2, dx + doorW * 0.5 - 1.8, dy0 + dh * 0.30, 3.6, dh * 0.40, 1.8); c2.fill();
+        // 铰链
+        c2.fillStyle = lt ? '#8fa2ba' : '#41546d';
+        c2.fillRect(dx + 1, dy0 + 8, 4, 7);
+        c2.fillRect(dx + 1, dy0 + dh - 15, 4, 7);
       }
-      c2.restore();
-
-      /* ---------- 内腔描边 ---------- */
-      c2.strokeStyle = lt ? 'rgba(30,70,120,0.28)' : 'rgba(160,200,245,0.30)';
-      c2.lineWidth = 1;
-      c2.strokeRect(inX + 0.5, inY + 0.5, inW - 1, inH - 1);
-
-      /* ---------- 加热元件（左 / 顶 / 底） ---------- */
-      var heat = clamp((Tpg - st.T0) / Math.max(1, st.p.Tset - st.T0), 0, 1);
-      var glow = 0.25 + 0.75 * heat;
-      c2.lineCap = 'round';
-      c2.shadowBlur = 10 * glow;
-      c2.shadowColor = 'rgba(255,110,40,' + (0.55 * glow).toFixed(2) + ')';
-      c2.strokeStyle = 'rgba(255,' + Math.round(90 + 110 * heat) + ',' + Math.round(40 + 60 * heat) + ',' + (0.5 + 0.45 * heat).toFixed(2) + ')';
-      c2.lineWidth = 2.4;
-      // 左壁螺旋
-      c2.beginPath();
-      for (var yy = inY + 6; yy <= inY + inH - 6; yy += 9) {
-        c2.moveTo(inX + 1.6, yy);
-        c2.lineTo(inX + 6.2, yy + 4.5);
-      }
-      c2.stroke();
-      // 顶部 / 底部加热带
-      c2.lineWidth = 1.3;
-      c2.beginPath();
-      c2.moveTo(inX + 8, inY + 3.2); c2.lineTo(inX + inW - 8, inY + 3.2);
-      c2.moveTo(inX + 8, inY + inH - 3.2); c2.lineTo(inX + inW - 8, inY + inH - 3.2);
-      c2.stroke();
-      c2.lineWidth = 2.6;
-      c2.beginPath();
-      for (var xx = inX + 10; xx <= inX + inW - 10; xx += 11) {
-        c2.moveTo(xx, inY + 1.4); c2.lineTo(xx, inY + 5.4);
-        c2.moveTo(xx, inY + inH - 1.4); c2.lineTo(xx, inY + inH - 5.4);
-      }
-      c2.stroke();
-      c2.shadowBlur = 0;
-
-      /* ---------- 炉门 ---------- */
-      var dx = bodyX + bodyW - doorW - shell;
-      var dy0 = bodyY + shell, dh = bodyH - shell * 2;
-      // 门缝冷流（先画，压在门后）
-      c2.save();
-      var grd = c2.createLinearGradient(dx - 30, 0, dx + 1, 0);
-      grd.addColorStop(0, 'rgba(70,140,235,0)');
-      grd.addColorStop(1, lt ? 'rgba(30,105,200,0.38)' : 'rgba(110,185,255,0.34)');
-      c2.fillStyle = grd;
-      c2.fillRect(dx - 30, dy0 + 2, 31, dh - 4);
-      c2.restore();
-
-      c2.fillStyle = lt ? '#aebdd2' : '#28374c';
-      rrect(c2, dx, dy0, doorW, dh, 3); c2.fill();
-      c2.strokeStyle = lt ? 'rgba(30,70,120,0.35)' : 'rgba(150,190,240,0.30)';
-      c2.lineWidth = 1; c2.stroke();
-      // 门扇内衬
-      c2.fillStyle = lt ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.06)';
-      rrect(c2, dx + 3, dy0 + 5, doorW - 6, dh - 10, 2); c2.fill();
-      // 把手
-      c2.fillStyle = lt ? '#6c8098' : '#5d708a';
-      rrect(c2, dx + doorW * 0.5 - 1.8, dy0 + dh * 0.30, 3.6, dh * 0.40, 1.8); c2.fill();
-      // 铰链
-      c2.fillStyle = lt ? '#8fa2ba' : '#41546d';
-      c2.fillRect(dx + 1, dy0 + 8, 4, 7);
-      c2.fillRect(dx + 1, dy0 + dh - 15, 4, 7);
 
       /* ---------- 搁板 ---------- */
-      var sy = st.syn;
-      var sxp = st.sxn;
+      var sy = dragPos ? dragPos.sy / 100 : st.syn;
+      var sxp = dragPos ? dragPos.sx / 100 : st.sxn;
+      var u = 0.10 + 0.80 * sxp, v = 0.12 + 0.76 * sy;
+      var localTemp = st.T0 + (Tpg - st.T0) * kilnFAt(G, u, v);
       var sw = Math.max(24, inW * 0.135);
       var shh = Math.max(16, inH * 0.17);
-      var px = inX + inW * (0.10 + 0.80 * sxp) - sw / 2;
-      var py = inY + inH * (0.88 - 0.76 * sy) - shh;
-      px = clamp(px, inX + 4, inX + inW - sw - 4);
-      py = clamp(py, inY + 4, inY + inH - shh - 4);
-      st._sample = { x: px, y: py, w: sw, h: shh };
+      // 绘制与拖动共享中心点的活动范围，靠墙时也能连续走完 0–100%。
+      var travel = st._travel = {
+        left: inX + Math.max(inW * 0.10, sw / 2 + 4),
+        right: inX + Math.min(inW * 0.90, inW - sw / 2 - 4),
+        top: inY + Math.max(inH * 0.12, shh / 2 + 4),
+        bottom: inY + Math.min(inH * 0.88, inH - shh / 2 - 4)
+      };
+      var cx = travel.left + (travel.right - travel.left) * sxp;
+      var cy = travel.bottom - (travel.bottom - travel.top) * sy;
+      var px = cx - sw / 2, py = cy - shh / 2;
+      st._sample = { x: cx, y: cy, w: sw, h: shh };
 
       // 垫板
       c2.fillStyle = lt ? 'rgba(120,90,70,0.55)' : 'rgba(150,110,80,0.55)';
@@ -542,7 +567,7 @@
 
       // 拖动手柄
       c2.setLineDash([3, 3]);
-      c2.strokeStyle = st._hover || st._drag ? 'rgba(61,219,232,0.9)' : 'rgba(61,219,232,0.42)';
+      c2.strokeStyle = dragPos ? 'rgba(61,219,232,0.9)' : 'rgba(61,219,232,0.42)';
       c2.lineWidth = 1;
       rrect(c2, px - 5.5, py - 5.5, sw + 11, shh + 11, 4); c2.stroke();
       c2.setLineDash([]);
@@ -563,10 +588,9 @@
       /* ---------- 标注：设定 / 样品 / 缺口 ---------- */
       c2.textAlign = 'center';
       c2.font = '10.5px "Microsoft YaHei", sans-serif';
-      var lab = '样品 ' + fmt(Ts, 0) + ' ℃';
+      var lab = dragPos ? '局部炉温 ' + fmt(localTemp, 0) + ' ℃' : '样品 ' + fmt(Ts, 0) + ' ℃';
       var lw = c2.measureText(lab).width + 10;
       var tagY = py - 11;
-      if (tagY - 8 < inY + 4) tagY = py + shh + 17;      // 贴顶时标签放到样品下方
       var labX = clamp(px + sw / 2, inX + lw / 2 + 3, inX + inW - lw / 2 - 3);
       c2.fillStyle = lt ? 'rgba(255,255,255,0.92)' : 'rgba(8,14,24,0.8)';
       rrect(c2, labX - lw / 2, tagY - 8, lw, 15, 4); c2.fill();
@@ -600,10 +624,9 @@
       var phH = H - py0 - 6;
       if (phH < 40) return;
 
-      var jrow = Math.round((0.12 + 0.76 * sy) * (ny - 1));
       var prof = [], pMin = 1e9, pMax = -1e9;
       for (var kk2 = 0; kk2 < nx; kk2++) {
-        var tv = st.T0 + (Tpg - st.T0) * G.F[jrow * nx + kk2];
+        var tv = st.T0 + (Tpg - st.T0) * kilnFAt(G, kk2 / (nx - 1), v);
         prof.push(tv);
         if (tv < pMin) pMin = tv;
         if (tv > pMax) pMax = tv;
@@ -663,13 +686,12 @@
       c2.stroke();
 
       // 样品位置
-      var sxPos = inX + inW * (0.10 + 0.80 * sxp);
-      var syT = st.T0 + (Tpg - st.T0) * kilnFAt(G, 0.10 + 0.80 * sxp, 0.12 + 0.76 * sy);
+      var sxPos = inX + inW * u;
       c2.setLineDash([2, 3]);
       c2.strokeStyle = lt ? 'rgba(10,125,144,0.55)' : 'rgba(61,219,232,0.5)';
       c2.beginPath(); c2.moveTo(sxPos, py0 + 2); c2.lineTo(sxPos, baseY); c2.stroke();
       c2.setLineDash([]);
-      c2.beginPath(); c2.arc(sxPos, my(syT), 3.8, 0, 6.2832);
+      c2.beginPath(); c2.arc(sxPos, my(localTemp), 3.8, 0, 6.2832);
       c2.fillStyle = cCyan; c2.fill();
       c2.strokeStyle = lt ? '#ffffff' : '#06202a'; c2.lineWidth = 1.4; c2.stroke();
 
@@ -721,21 +743,21 @@
       c2.stroke();
     }
 
-    st.hitTest = function (mx_, my_) {
-      var s = st._sample;
-      if (!s) return false;
-      var pad = 10;
-      return mx_ > s.x - pad && mx_ < s.x + s.w + pad && my_ > s.y - pad && my_ < s.y + s.h + pad;
+    st.grabOffset = function (x, y, touch) {
+      var sample = st._sample;
+      if (!sample) return null;
+      var dx = x - sample.x, dy = y - sample.y;
+      var pad = touch ? 16 : 10;
+      return Math.abs(dx) <= sample.w / 2 + pad && Math.abs(dy) <= sample.h / 2 + pad
+        ? { x: dx, y: dy } : null;
     };
 
-    st.toPos = function (mx_, my_) {
-      var ch = st._chamber;
-      if (!ch) return null;
-      var u = (mx_ - ch.x) / ch.w;
-      var v = (my_ - ch.y) / ch.h;
+    st.toPos = function (x, y) {
+      var travel = st._travel;
+      if (!travel || travel.right <= travel.left || travel.bottom <= travel.top) return null;
       return {
-        sx: clamp((u - 0.10) / 0.80 * 100, 0, 100),
-        sy: clamp((0.88 - v) / 0.76 * 100, 0, 100)
+        sx: clamp((x - travel.left) / (travel.right - travel.left) * 100, 0, 100),
+        sy: clamp((travel.bottom - y) / (travel.bottom - travel.top) * 100, 0, 100)
       };
     };
 
