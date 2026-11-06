@@ -2086,7 +2086,7 @@
   var aiChat = { busy: false, stream: null, msgs: [], ctxAcked: false, pending: null };
 
   var AI_SYSTEM =
-    '你是杭州电子科技大学材料科学与工程学院「虚拟仿真实验平台」的助教，负责解释实验现象、诊断工艺问题、' +
+    '你是「材料仿真实验室」虚拟仿真平台的助教，负责解释实验现象、诊断工艺问题、' +
     '给出下一步实验建议。用户是正在做虚拟仿真的本科生。要求：先给结论再给依据；涉及数值时直接引用用户给的数据；' +
     '不要编造平台上没有的指标；不确定就说明；用简体中文，条理清楚，控制在 300 字以内。' +
     '可以用无序列表分段，但不要使用 Markdown 表格。';
@@ -2878,7 +2878,7 @@
     var html = '';
     html += '<div class="report-head">' +
       '<h1 class="report-title">' + M.name + ' 虚拟仿真实验报告</h1>' +
-      '<div class="report-meta">杭州电子科技大学 · 材料科学与工程虚拟仿真实验教学中心<br>' +
+      '<div class="report-meta">AI+ 虚拟仿真材料实验平台<br>' +
       '生成时间：' + new Date().toLocaleString('zh-CN') + ' ｜ 材料体系：' +
       (matNames.length === 1 ? matNames[0] : matNames.join(' / ')) +
       ' ｜ 记录组数：' + list.length + ' ｜ 分析基于第 ' + (run.seq || '·') + ' 组</div></div>';
