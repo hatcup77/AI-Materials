@@ -11,7 +11,7 @@
     { id: 'cvd', short: 'CVD', name: '化学气相沉积', desc: '表面反应与质量输运的串联' },
     { id: 'rd', short: '反应扩散', name: '反应-扩散', desc: '浓度场、反应前沿与渗透深度' },
     { id: 'kiln', short: '马弗炉', name: '马弗炉烧成', desc: '边界条件与炉膛不均匀性' },
-    { id: 'heat', short: '热处理', name: '热处理', desc: 'Fe-C 相变、组织与磁性能' },
+    { id: 'heat', short: '软磁热处理', name: '软磁热处理', desc: 'Fe-C 相变、组织与磁性能' },
     { id: 'quench', short: '碳钢热处理', name: '碳钢热处理', desc: 'CCT 曲线、淬透性与淬火回火' },
     { id: 'num', short: '数值/AI', name: '数值方法与智能寻优', desc: '离散求解、扫掠与优化' }
   ];

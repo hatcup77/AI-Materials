@@ -19,9 +19,9 @@
 
   var HEAT = {
     id: 'heat',
-    name: '热处理',
+    name: '软磁热处理',
     tag: 'Heat Treatment',
-    subtitle: 'Fe-C 合金的加热、保温与可控冷却',
+    subtitle: 'Fe-C 合金的加热、保温与可控冷却 · 面向磁性能',
     primaryKey: 'Hc',
     paramDefs: [
       { key: 'C', label: '碳含量', unit: 'wt%', min: 0.02, max: 1.20, step: 0.01, def: 0.45,
